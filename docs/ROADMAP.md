@@ -22,7 +22,7 @@ trois autres ne sont que du contenu.
 **Terminé quand** : `docker compose up -d db && npm run dev` →
 `/api/health` répond `ok` ; `npm test` passe (test de santé).
 
-### Étape 1 — Contenu, graine et étanchéité des solutions
+### Étape 1 — Contenu, graine et étanchéité des solutions ✅ (2026-11-10)
 - Schémas Zod `public` / `private` pour les 4 épreuves + Portail.
 - PRNG déterministe, générateur de données à partir d'une graine.
 - Chargeur `server-only`, fonction `toPublic()`.

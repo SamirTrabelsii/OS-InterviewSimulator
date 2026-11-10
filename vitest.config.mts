@@ -11,12 +11,15 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "@content": fileURLToPath(new URL("./content", import.meta.url)),
       // `server-only` lève une erreur hors de Next.js ; neutralisé en test.
       "server-only": fileURLToPath(new URL("./tests/stubs/server-only.ts", import.meta.url)),
     },
   },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts", "tests/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "content/**/*.test.ts", "tests/**/*.test.ts"],
+    // Tests qui exigent un `next build` préalable : npm run test:build
+    exclude: ["tests/build/**", "node_modules/**"],
   },
 });

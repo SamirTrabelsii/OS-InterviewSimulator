@@ -59,4 +59,8 @@ Même structure pour tous : quiz, SQL, algo, logique, binôme, rapport final.
 - Première fois : cp .env.example .env.local puis npm run db:migrate
 - Schéma modifié : npm run db:generate (migration dans /drizzle)
 - Production locale : npm run build && npm start (dist/server.cjs)
+- npm run test:build : build + vérifie qu'aucun canari de solution
+  n'atteint les fichiers envoyés au navigateur (à lancer avant chaque push)
+- Contenu : /content/<scenario> importe "server-only" ; le client ne
+  reçoit que toPublic() (src/engine/content/instance.ts)
 - Next.js 16 : lire node_modules/next/dist/docs avant d'utiliser une API
