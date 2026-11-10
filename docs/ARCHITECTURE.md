@@ -1,0 +1,289 @@
+# Architecture — Le Portail
+
+> Statut : proposition v1 (2026-11-10). À valider avant de coder.
+> Principe directeur : **une seule application, une seule base, un seul
+> service Cloud Run**. On ajoute une pièce seulement quand une contrainte
+> l'impose.
+
+## 1. Hypothèses retenues
+
+| Sujet | Décision | Origine |
+|---|---|---|
+| Volume | Quelques entretiens / semaine, **1 à 3 sessions simultanées** max | Réponse utilisateur |
+| Accès candidat | **Lien unique à jeton**, valable sur un créneau ; même lien utilisable sur un PC du bureau (présentiel) | Réponse utilisateur |
+| Binôme | **Deux candidats** sur le même créneau, en appel Teams (le recruteur peut y être). La voix passe par Teams, pas par l'application | Réponse utilisateur |
+| Replay | **Événements clés + instantanés du code** (~ toutes les 5 s quand il change) | Réponse utilisateur |
+| Recruteurs | Comptes Google du domaine de l'entreprise (Auth.js) | CLAUDE.md |
+
+## 2. Vue d'ensemble
+
+```mermaid
+flowchart LR
+  subgraph Navigateur candidat
+    UI[Next.js UI<br/>Monaco · sql.js · Pyodide]
+  end
+  subgraph Navigateur recruteur
+    RUI[Tableau de bord<br/>replay · grille]
+  end
+  subgraph CR[Cloud Run « portail » — 1 instance max]
+    HTTP[Next.js App Router<br/>route handlers / server actions]
+    WS[Socket.IO<br/>salle Portail]
+    VAL[Validateurs d'épreuves]
+    SB[[Bac à sable<br/>processus enfant<br/>Pyodide / sql.js]]
+    CONTENT[(/content<br/>énoncés + solutions<br/>côté serveur seulement)]
+  end
+  DB[(Cloud SQL<br/>PostgreSQL)]
+  SM[Secret Manager]
+  GROQ[Groq — optionnel]
+
+  UI -- HTTPS --> HTTP
+  UI -- WebSocket --> WS
+  RUI -- HTTPS + WebSocket observateur --> HTTP
+  HTTP --> VAL --> SB
+  VAL --> CONTENT
+  HTTP --> DB
+  WS --> DB
+  SM -. variables d'env .-> CR
+  HTTP -. si Bip activé .-> GROQ
+```
+
+Un seul processus Node sert les pages, l'API, le temps réel et pilote le
+bac à sable. Le bac à sable est un **processus enfant séparé** (pas un
+simple thread), lancé sans variables d'environnement.
+
+## 3. Choix et justifications
+
+### 3.1 Application : Next.js + serveur personnalisé (Socket.IO)
+
+Socket.IO a besoin d'intercepter l'« upgrade » HTTP ; l'App Router ne le
+permet pas. On démarre donc Next.js via un petit `server.ts` qui crée le
+serveur HTTP, y attache Socket.IO et délègue le reste à Next.
+
+**Décision validée (2026-11-10), CLAUDE.md mis à jour** : la documentation Next.js indique que la
+sortie `standalone` ne trace pas les fichiers d'un serveur personnalisé et
+génère son propre `server.js` ; les deux ne se combinent pas proprement.
+Proposition : **abandonner `output: "standalone"`**, image Docker
+multi-étapes avec `npm ci --omit=dev` + `.next` + `server.js` compilé
+(esbuild). Image plus lourde (~300–400 Mo au lieu de ~150 Mo), sans impact
+notable sur le coût.
+
+Alternatives écartées :
+- *Socket.IO dans un 2ᵉ service Cloud Run* : deux déploiements, deux
+  démarrages à froid, CORS et partage de session à gérer.
+- *Bricoler le `server.js` du mode standalone* : fragile à chaque montée
+  de version de Next.
+- *Remplacer le temps réel par du polling HTTP* : faisable pour 2
+  personnes, mais l'éditeur partagé et l'observation live seraient
+  saccadés ; Socket.IO est déjà dans la stack.
+
+### 3.2 Une seule instance → état temps réel en mémoire
+
+Avec `max-instances=1`, tous les sockets arrivent sur le même processus :
+**pas d'adaptateur Redis**. L'état éphémère (présence, qui tient le
+clavier) vit en mémoire ; tout ce qui compte (code, événements, gemmes)
+est écrit en base. Si Cloud Run redémarre l'instance, les clients se
+reconnectent et rechargent le dernier instantané.
+
+Écartés : adaptateur Redis / Memorystore (≈ 35 $/mois minimum, inutile à
+1 instance), Firestore temps réel (2ᵉ base de données).
+
+Limite assumée : le timeout Cloud Run de 3600 s coupe un WebSocket au
+bout d'une heure ; la session dure 45 min et le client se reconnecte
+automatiquement de toute façon.
+
+### 3.3 Éditeur partagé du Portail : pilote / copilote
+
+Le binôme est déjà en appel Teams : on applique le modèle classique de
+pair programming **pilote / copilote**. Un seul candidat tient le clavier
+(verrou côté serveur), l'autre voit le code en direct et peut
+« demander la main ». Le pilote diffuse le contenu (debounce ~150 ms),
+le serveur le relaie et l'enregistre en instantané.
+
+- Simple, sans conflit d'édition possible.
+- Lisible au replay : qui a tapé quoi, combien de passages de clavier.
+
+Écarté pour la v1 : **Yjs / CRDT** (édition simultanée). Plus riche mais
+ajoute un fournisseur Socket.IO maison, la persistance de documents Yjs et
+des cas de bord. Réversible plus tard sans toucher au reste.
+
+### 3.4 Sécurité des solutions (règle n°1)
+
+Les solutions et tests cachés ne sortent jamais du serveur. Défense en
+profondeur :
+
+1. **Séparation du contenu** : chaque épreuve de `/content` exporte une
+   partie `public` et une partie `private`, validées par Zod. Les modules
+   de chargement importent `server-only` (le build échoue si un composant
+   client les importe). Le client ne reçoit qu'un DTO construit
+   explicitement par `toPublic()`.
+2. **Canaris** : chaque solution contient une chaîne canari unique. Un
+   test CI fait un `next build` puis cherche ces canaris dans
+   `.next/static` → échec si trouvés.
+3. **Validation exclusivement serveur** : la réponse au candidat se limite
+   à « réussi / X tests sur Y » et un message générique. Jamais la valeur
+   attendue, jamais la sortie standard d'un test caché.
+4. **Anti-codage en dur** : SQL et algo sont aussi validés sur un **jeu de
+   données caché** dérivé de la graine (`seed` → `seed'`), différent de
+   celui que voit le candidat.
+5. **Bac à sable** (voir 3.5).
+6. **Bip** ne reçoit jamais les solutions dans son contexte.
+7. **Limitation de débit** des soumissions (ex. 1 / 3 s par épreuve).
+
+### 3.5 Exécution du code candidat côté serveur
+
+Un **processus enfant Node** (`child_process.fork`) par exécution :
+
+- `env: {}` → aucun secret visible ;
+- **modèle de permissions Node** (`--permission`, lecture seule limitée
+  aux fichiers Pyodide/sql.js, pas de `child_process`, pas de workers) ;
+- Pyodide chargé avec un `jsglobals` minimal et `fetch` supprimé, pour
+  que `import js` ne donne accès à rien d'utile ;
+- délai maximum (ex. 5 s algo, 2 s SQL) → `kill('SIGKILL')` ;
+- plafond mémoire, et sortie standard tronquée.
+
+Un processus « chaud » est préparé à l'avance et **jeté après chaque
+usage** (pas de fuite d'état entre candidats). À 3 sessions simultanées,
+≤ 3 processus de ~150–250 Mo → instance Cloud Run à **2 Gio / 1 vCPU**.
+
+Le **SQL du candidat ne touche jamais PostgreSQL** : il est exécuté dans
+sql.js (SQLite WASM), dans le même bac à sable, sur une base générée
+depuis la graine, puis comparé au résultat de la requête solution.
+
+Risque résiduel accepté : le processus enfant a accès réseau (Cloud Run ne
+filtre pas par processus). Il ne contient rien d'autre que l'énoncé et les
+tests de l'épreuve en cours.
+
+Alternatives écartées :
+- *Worker thread* : même processus, isolation plus faible.
+- *Judge0 / Piston auto-hébergé* : service supplémentaire à maintenir.
+- *API d'exécution tierce* : enverrait les tests cachés à l'extérieur.
+- *Cloud Run Jobs / service « juge » séparé sans compte de service* :
+  meilleure isolation mais démarrage à froid à chaque soumission et un 2ᵉ
+  déploiement. **Plan B** si un audit de sécurité l'exige.
+
+### 3.6 Chrono serveur
+
+`sessions.started_at` et `sessions.deadline` font foi. Le client calcule
+l'écart avec l'heure serveur (renvoyée à chaque réponse) et n'affiche
+qu'un compte à rebours. Toute soumission après `deadline` est refusée.
+Les phases (gemmes / Portail) sont dérivées de l'heure serveur.
+
+### 3.7 Déroulé d'un créneau en binôme
+
+```
+T0 ─── Phase gemmes (individuelle, ~30 min) ───┬── Portail en binôme (~15 min) ── T0+45
+                                                └ ouvre à min(les 2 ont 4 gemmes, T0+30)
+```
+
+- Les deux candidats démarrent au même `T0` (créneau du binôme).
+- Le plus rapide attend sur un écran « Le Portail s'éveille… » (bonus
+  facultatif possible plus tard).
+- **Repli solo** : si un candidat est absent, le recruteur bascule la
+  session en Portail solo (même énigme).
+- Le recruteur peut **observer en direct** la salle Portail (lecture
+  seule), en plus du replay.
+
+### 3.8 Accès candidat
+
+1. Le recruteur crée un créneau (scénario, 1 ou 2 candidats, heure).
+2. Chaque candidat reçoit un lien `/s/<jeton>` (32 octets aléatoires ; en
+   base on ne stocke que son **hash SHA-256**).
+3. Le lien n'est valable que de `créneau − 15 min` à `créneau + 2 h`.
+4. À l'ouverture, il est échangé contre un cookie `httpOnly`, `Secure`,
+   `SameSite=Lax` lié à la session. Réouverture sur un autre appareil
+   possible (crash, PC du bureau) mais **journalisée** et visible au
+   replay.
+5. Présentiel : le recruteur ouvre le lien sur le PC du bureau, en
+   fenêtre privée.
+
+Écartés : comptes candidats (friction inutile pour 45 min), lien magique
+par email (dépend d'un service d'envoi).
+
+### 3.9 Recruteurs
+
+Auth.js + Google, paramètre `hd=<domaine>` **et** vérification serveur
+dans le callback `signIn` (`email_verified` + suffixe du domaine), car
+`hd` seul est contournable. Sessions **JWT** (pas de tables d'adaptateur),
+durée 8 h. Toutes les routes `/recruteur/*` et les données de notation
+sont protégées côté serveur.
+
+### 3.10 Contenu et graine
+
+- `/content/<scenario>/` en **TypeScript** + schémas Zod : les
+  générateurs de données sont du code, le typage évite les fautes.
+- Un PRNG déterministe (mulberry32) initialisé par `sessions.seed`
+  produit : variante choisie, jeu de données SQL, valeurs de l'énigme
+  logique, jeu caché (`seed'`).
+- Le moteur (`/src`) ne connaît aucun scénario par son nom ; il charge
+  un registre.
+
+Écarté : YAML/Markdown pour tout le contenu — lisible par des
+non-développeurs mais les générateurs restent du code ; on pourra mettre
+seulement les textes en Markdown plus tard si les RH veulent les éditer.
+
+### 3.11 Journal d'événements et replay
+
+Table `events` en **ajout seul** : `(session_id, seq, ts, actor, type,
+payload jsonb)`. Le client envoie par lots (toutes les 2–5 s et à chaque
+action importante). Types : `stage.enter`, `code.snapshot`, `run`,
+`submit`, `result`, `hint`, `portal.keyboard`, `bip.ask`, `reconnect`,
+`focus.lost`…
+
+Ordre de grandeur : ~600 instantanés × quelques Ko ≈ quelques Mo par
+session → négligeable pour 10 Go.
+
+Le replay = rejouer les événements sur une frise avec un Monaco en
+lecture seule. Écarté : enregistrement DOM (rrweb) ou vidéo — volumineux
+et moins exploitable pour noter.
+
+### 3.12 Modèle de données (v1)
+
+| Table | Rôle |
+|---|---|
+| `slots` | créneau : scénario, heure, mode (solo/binôme), statut |
+| `sessions` | un candidat dans un créneau : hash du jeton, graine, `started_at`, `deadline`, gemmes obtenues |
+| `events` | journal d'actions (replay) |
+| `portal_rooms` | état persistant du Portail : code courant, pilote, résultat |
+| `evaluations` | grille de compétences + adéquation par profil, par recruteur |
+
+Les notes et l'adéquation ne sont exposées que par des routes recruteur.
+
+### 3.13 Assistant Bip
+
+Interface `Assistant { ask(ctx, question): Promise<Answer> }` avec
+`GroqAssistant` et `FakeAssistant` (tests). Désactivé par défaut
+(`BIP_ENABLED=false`). Contexte envoyé : énoncé public + code du candidat,
+**jamais** la partie `private`. Chaque échange est journalisé.
+
+## 4. Hébergement et coûts
+
+Conforme à CLAUDE.md, avec ces précisions :
+
+- Cloud Run : 1 vCPU, **2 Gio**, `min=0`, `max=1`, affinité de session,
+  timeout 3600 s, concurrence 80.
+- Démarrage à froid (~5–10 s) : le recruteur ouvre son tableau de bord
+  quelques minutes avant le créneau, ce qui réveille l'instance.
+- Cloud SQL arrêté hors 8h–20h semaine : un entretien hors de cette plage
+  nécessite de rallumer la base à la main.
+- Migrations Drizzle exécutées au démarrage du conteneur (verrou
+  consultatif PostgreSQL), ce qui est sûr à 1 instance.
+
+Ordre de grandeur (à confirmer avec le simulateur de prix GCP) : Cloud SQL
+db-f1-micro allumé ~60 h/semaine + 10 Go HDD ≈ 5 $/mois ; Cloud Run
+quelques heures actives/semaine ≈ quelques $ ; Secret Manager et Scheduler
+≈ 0. **Total visé : < 15 $/mois.**
+
+Écartés : GKE (coût fixe), App Engine Flexible (pas de scale-to-zero),
+SQLite sur Cloud Run (disque éphémère), base hors GCP (Neon, Supabase —
+hors contrainte d'hébergement).
+
+## 5. Questions ouvertes
+
+1. ~~**Standalone**~~ : abandonné, validé le 2026-11-10 (§ 3.1).
+2. **Portail** : ouverture à `T0+30` ou dès que les deux ont leurs
+   gemmes — durées à confirmer.
+3. **RGPD** : durée de conservation des sessions et replays (proposition :
+   purge automatique à 6 mois), et texte d'information au candidat.
+4. **Grille de compétences** et **profils** (ex. back, data, full-stack) :
+   à fournir pour l'étape 8.
+5. **Domaine Google** autorisé pour les recruteurs.
