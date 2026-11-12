@@ -80,7 +80,7 @@ processus, évasion par `Function`, sortie géante, SQL en écriture ou
 multi-instructions, file pleine, et un script JS hostile lancé avec les
 drapeaux de l'enfant (frontière Node). Limites : ARCHITECTURE.md § 3.5.
 
-### Étape 6 — Gemme SQL
+### Étape 6 — Gemme SQL ✅ (2026-11-12)
 - Monaco SQL + sql.js dans le navigateur (jeu de données visible).
 - Validation serveur : requête candidat vs solution sur le jeu visible
   **et** le jeu caché.
@@ -88,6 +88,15 @@ drapeaux de l'enfant (frontière Node). Limites : ARCHITECTURE.md § 3.5.
 **Terminé quand** : test du validateur (requête juste, résultat juste
 mais ordre différent selon l'énoncé, requête codée en dur qui échoue sur
 le jeu caché, CTE récursive infinie coupée) ; parcours manuel.
+
+Réalisé : Monaco 0.57 (version AMD) et sql.js servis depuis
+`public/vendor` (copiés par `scripts/copy-vendor.mjs`, jamais de CDN) ;
+requête du navigateur dans un Web Worker arrêté après 3 s. Côté serveur,
+une seule exécution dans le bac à sable passe sur les deux jeux
+(`extraSetups`) ; la requête solution, code de confiance, est exécutée
+dans le processus serveur (sql.js) et n'atteint jamais l'enfant. Réponse
+au candidat : « X / 2 » et l'erreur de sa requête (syntaxe, délai).
+Règle de gemme décidée le 2026-11-12 (ARCHITECTURE.md § 3.7).
 
 ### Étape 7 — Gemme Algo Python
 - Monaco Python + Pyodide navigateur avec exemples publics.

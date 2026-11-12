@@ -51,6 +51,7 @@ export const CLIENT_EVENT_TYPES = [
   "focus.lost",
   "focus.gained",
   "code.snapshot",
+  "code.run", // exécution dans le navigateur (jeu visible / exemples publics)
   "answer.change", // brouillon (choix modifié, saisie) : hésitations visibles au replay
   "client.error",
 ] as const;

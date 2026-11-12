@@ -7,6 +7,9 @@ if (!process.env.DATABASE_URL && existsSync(".env.local")) {
   process.loadEnvFile(".env.local");
 }
 
+// Tests qui lancent de vrais processus du bac à sable (Pyodide, sql.js).
+const SANDBOX_TESTS = ["src/server/sandbox/**/*.test.ts", "src/server/grading/**/*.test.ts", "src/app/api/session/gemmes/code.test.ts"];
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -26,7 +29,7 @@ export default defineConfig({
         test: {
           name: "unit",
           include: ["src/**/*.test.ts", "content/**/*.test.ts", "tests/**/*.test.ts"],
-          exclude: ["tests/build/**", "node_modules/**", "src/server/sandbox/**"],
+          exclude: ["tests/build/**", "node_modules/**", ...SANDBOX_TESTS],
           sequence: { groupOrder: 0 },
         },
       },
@@ -36,7 +39,10 @@ export default defineConfig({
         extends: true,
         test: {
           name: "sandbox",
-          include: ["src/server/sandbox/**/*.test.ts"],
+          include: SANDBOX_TESTS,
+          // Un fichier à la fois : leurs délais (5 s Python) sont mesurés en
+          // temps réel et ne supportent pas plusieurs pools en concurrence.
+          fileParallelism: false,
           sequence: { groupOrder: 1 },
         },
       },

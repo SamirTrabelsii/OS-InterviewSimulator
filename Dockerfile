@@ -30,7 +30,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/dist ./dist
-COPY public ./public
+COPY --from=build /app/public ./public
 COPY sandbox ./sandbox
 COPY next.config.ts ./
 # Le serveur reste root : seul root peut lancer les processus du bac à

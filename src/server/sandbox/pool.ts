@@ -53,7 +53,7 @@ export type SandboxOptions = {
   /** Délais par défaut et maximum d'une tâche. */
   defaultTimeoutMs: { python: number; sql: number };
   maxTimeoutMs: number;
-  /** Taille maximale du code ou de la requête du candidat. */
+  /** Taille maximale du code ou de la requête du candidat (hors bases générées). */
   maxCodeBytes: number;
   /** Utilisateur Linux des enfants (le parent doit être root). */
   user?: { uid: number; gid: number };
@@ -320,6 +320,7 @@ class SandboxChild {
             status: memory ? "memory" : m.status,
             error: m.error,
             sql: m.sql,
+            sqlRuns: m.sqlRuns,
             stdout: m.stdout,
             stdoutTruncated: m.stdoutTruncated,
           });
@@ -375,7 +376,8 @@ export class SandboxPool {
 
   async run(job: SandboxJob): Promise<SandboxResult> {
     if (this.closed) return emptyResult("crash", "Bac à sable arrêté");
-    const size = Buffer.byteLength(job.kind === "python" ? job.code : job.query + job.setup);
+    // Seul le texte du candidat est plafonné : les bases (setup) viennent du serveur.
+    const size = Buffer.byteLength(job.kind === "python" ? job.code : job.query);
     if (size > this.opts.maxCodeBytes) return emptyResult("error", "Code trop long");
     if (this.active >= this.opts.maxConcurrent && this.queue.length >= this.opts.maxQueue) {
       return emptyResult("busy", messageFor("busy", ""));

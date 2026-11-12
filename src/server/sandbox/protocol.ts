@@ -25,6 +25,11 @@ export type SqlJob = {
   setup: string;
   /** Requête du candidat : une seule instruction, base en lecture seule. */
   query: string;
+  /**
+   * Autres bases sur lesquelles exécuter la même requête, dans le même
+   * processus (ex. jeu caché) : résultats dans `sqlRuns`, dans l'ordre.
+   */
+  extraSetups?: string[];
   maxRows?: number;
   timeoutMs?: number;
 };
@@ -67,6 +72,8 @@ export type SandboxResult = {
   /** Résultats par cas (tâches Python avec `call`), éventuellement partiels. */
   cases: CaseResult[];
   sql?: SqlResult;
+  /** Un résultat par base (`setup` puis `extraSetups`) ; `sql` = le premier. */
+  sqlRuns?: SqlResult[];
   error?: string;
 };
 
@@ -79,6 +86,7 @@ export type ChildMessage =
       status: "ok" | "error";
       error?: string;
       sql?: SqlResult;
+      sqlRuns?: SqlResult[];
       stdout: string;
       stdoutTruncated: boolean;
     };

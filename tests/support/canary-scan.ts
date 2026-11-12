@@ -28,15 +28,21 @@ export function scanForCanaries(
 
 /**
  * Fichiers d'un build Next.js qui peuvent atteindre le navigateur :
- * tout `.next/static`, et les pages prérendues (HTML, charges RSC).
+ * tout `.next/static`, les pages prérendues (HTML, charges RSC) et tout
+ * `public/` (moteurs du navigateur, workers).
  * Le code serveur (`.next/server/chunks`, etc.) contient légitimement
  * les solutions et n'est pas scanné.
  */
-export function scanNextClientOutput(nextDir: string, canaries: string[]): CanaryHit[] {
+export function scanNextClientOutput(
+  nextDir: string,
+  canaries: string[],
+  publicDir = path.join(nextDir, "..", "public"),
+): CanaryHit[] {
   const prerendered = /\.(html|rsc|body|json)$/;
   return [
     ...scanForCanaries(path.join(nextDir, "static"), canaries),
     ...scanForCanaries(path.join(nextDir, "server", "app"), canaries, (f) => prerendered.test(f)),
     ...scanForCanaries(path.join(nextDir, "server", "pages"), canaries, (f) => prerendered.test(f)),
+    ...scanForCanaries(publicDir, canaries),
   ];
 }

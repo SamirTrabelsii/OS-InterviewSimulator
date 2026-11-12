@@ -5,5 +5,6 @@ import base from "./vitest.config.mjs";
 // Pas de mergeConfig : il additionnerait include/exclude au lieu de les remplacer.
 export default defineConfig({
   resolve: base.resolve,
-  test: { ...base.test, include: ["tests/build/**/*.test.ts"], exclude: ["node_modules/**"] },
+  // Sans les projets de vitest.config.mts : ils lanceraient toute la suite.
+  test: { ...base.test, projects: undefined, include: ["tests/build/**/*.test.ts"], exclude: ["node_modules/**"] },
 });

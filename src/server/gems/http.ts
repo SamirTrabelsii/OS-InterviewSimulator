@@ -3,6 +3,7 @@ import { MalformedAnswerError } from "@/engine/validators/errors";
 import { currentCandidate } from "@/server/candidate/current";
 import { SessionError } from "@/server/candidate/session";
 import { loadInstance } from "@/server/content/registry";
+import { SandboxUnavailableError } from "@/server/grading/sql";
 import { TooSoonError } from "./service";
 import type { CandidateView } from "@/server/candidate/session";
 import type { ScenarioInstance } from "@/engine/content/schemas";
@@ -33,7 +34,11 @@ export async function handleSubmission(
   } catch (err) {
     if (err instanceof MalformedAnswerError) return json({ error: err.message }, 400);
     if (err instanceof TooSoonError) return json({ error: "Patientez un instant avant de réessayer.", retryAfterMs: err.retryAfterMs }, 429);
-    if (err instanceof SessionError) {      return json({ error: err.code === "termine" ? "Le temps est écoulé." : "La session n'a pas commencé." }, 409);
+    if (err instanceof SandboxUnavailableError) {
+      return json({ error: "Le serveur d'exécution est occupé, réessayez dans quelques secondes." }, 503);
+    }
+    if (err instanceof SessionError) {
+      return json({ error: err.code === "termine" ? "Le temps est écoulé." : "La session n'a pas commencé." }, 409);
     }
     throw err;
   }

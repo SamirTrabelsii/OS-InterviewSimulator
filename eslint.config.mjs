@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "dist/**",
     "next-env.d.ts",
+    // Moteurs du navigateur copiés depuis node_modules (scripts/copy-vendor.mjs).
+    "public/vendor/**",
   ]),
 ]);
 

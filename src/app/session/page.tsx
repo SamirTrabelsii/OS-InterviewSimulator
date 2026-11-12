@@ -7,8 +7,8 @@ import { Countdown } from "./Countdown";
 import { EventTracker } from "./EventTracker";
 import { StartButton } from "./StartButton";
 
-/** Épreuves jouables à ce stade de la roadmap (SQL : étape 6, Algo : étape 7). */
-const PLAYABLE = new Set<string>(["quiz", "logique"]);
+/** Épreuves jouables à ce stade de la roadmap (Algo : étape 7). */
+const PLAYABLE = new Set<string>(["quiz", "sql", "logique"]);
 
 const GEM_STYLE: Record<string, string> = {
   quiz: "from-amber-400 to-orange-500",

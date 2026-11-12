@@ -52,7 +52,13 @@ Même structure pour tous : quiz, SQL, algo, logique, binôme, rapport final.
 - Replays conservés 6 mois, annoncé au candidat avant le démarrage.
 - Quiz : une seule tentative, gemme acquise quel que soit le résultat
   (correction visible du recruteur seulement). Logique : essais illimités,
-  5 s minimum entre deux essais (contrôlé côté serveur).
+  5 s minimum entre deux essais (contrôlé côté serveur). SQL et Algo :
+  soumissions illimitées, 3 s minimum entre deux, gemme quand tout passe
+  (jeu visible + jeu caché / tests cachés) ; le candidat ne voit que
+  « X / Y ».
+- Moteurs du navigateur (Pyodide, sql.js, Monaco) servis par
+  l'application depuis public/vendor (scripts/copy-vendor.mjs), jamais
+  par un CDN.
 - T0 d'un créneau = premier clic sur « Commencer » (pas avant l'heure
   prévue) ; le second candidat du binôme partage ce T0.
 - Chaque action du candidat est journalisée (table events) pour le replay.

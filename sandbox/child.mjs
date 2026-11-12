@@ -225,21 +225,21 @@ function sqlValue(v) {
   return v;
 }
 
-function runSql(job) {
+/** Exécute la requête sur une base neuve, en lecture seule. */
+function runSqlOn(setup, query, maxRows) {
   const db = new SQL.Database();
   try {
-    db.exec(job.setup);
+    db.exec(setup);
     db.exec("PRAGMA query_only = 1;");
     // L'itérateur de sql.js libère chaque instruction à l'appel suivant :
     // on note le texte de la première, on vérifie qu'il n'y en a pas de
     // seconde, puis on la prépare à nouveau.
-    const it = db.iterateStatements(job.query);
+    const it = db.iterateStatements(query);
     const first = it.next();
     if (first.done) return { status: "error", error: "Requête vide" };
     const firstSql = first.value.getSQL();
     if (!it.next().done) return { status: "error", error: "Une seule requête est autorisée" };
     const stmt = db.prepare(firstSql);
-    const maxRows = Math.min(job.maxRows ?? 1000, MAX_ROWS_HARD);
     const columns = stmt.getColumnNames();
     const rows = [];
     let truncated = false;
@@ -257,6 +257,18 @@ function runSql(job) {
   } finally {
     db.close();
   }
+}
+
+/** Même requête sur chaque base (`setup`, puis `extraSetups`) ; arrêt à la première erreur. */
+function runSql(job) {
+  const maxRows = Math.min(job.maxRows ?? 1000, MAX_ROWS_HARD);
+  const sqlRuns = [];
+  for (const setup of [job.setup, ...(job.extraSetups ?? [])]) {
+    const r = runSqlOn(setup, job.query, maxRows);
+    if (r.status !== "ok") return r;
+    sqlRuns.push(r.sql);
+  }
+  return { status: "ok", sql: sqlRuns[0], sqlRuns };
 }
 
 function readJob() {

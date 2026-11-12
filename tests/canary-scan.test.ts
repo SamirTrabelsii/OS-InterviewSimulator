@@ -20,13 +20,15 @@ describe("scanNextClientOutput", () => {
   put("server/app/index.rsc", "0:CANARI-test-rsc");
   put("server/chunks/ssr/content.js", "CANARI-test-serveur"); // code serveur : autorisé
   put("static/chunks/propre.js", "rien ici");
+  put("public/workers/worker.js", "CANARI-test-public");
+  const publicDir = path.join(root, "public");
 
-  it("détecte un canari dans le JS client et dans une page prérendue", () => {
-    const hits = scanNextClientOutput(root, ["CANARI-test-fuite", "CANARI-test-rsc", "CANARI-test-serveur"]);
-    expect(hits.map((h) => h.canary).sort()).toEqual(["CANARI-test-fuite", "CANARI-test-rsc"]);
+  it("détecte un canari dans le JS client, une page prérendue et public/", () => {
+    const hits = scanNextClientOutput(root, ["CANARI-test-fuite", "CANARI-test-rsc", "CANARI-test-serveur", "CANARI-test-public"], publicDir);
+    expect(hits.map((h) => h.canary).sort()).toEqual(["CANARI-test-fuite", "CANARI-test-public", "CANARI-test-rsc"]);
   });
 
   it("n'alerte pas sur le code serveur", () => {
-    expect(scanNextClientOutput(root, ["CANARI-test-serveur"])).toEqual([]);
+    expect(scanNextClientOutput(root, ["CANARI-test-serveur"], publicDir)).toEqual([]);
   });
 });

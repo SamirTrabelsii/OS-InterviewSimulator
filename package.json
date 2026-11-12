@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-vendor.mjs",
     "dev": "tsx --env-file-if-exists=.env.local server.ts",
+    "prebuild": "node scripts/copy-vendor.mjs",
     "build": "next build && npm run build:server",
     "build:server": "esbuild server.ts --bundle --platform=node --target=node26 --format=cjs --packages=external --define:process.env.NODE_ENV='\"production\"' --outfile=dist/server.cjs",
     "start": "node --env-file-if-exists=.env.local dist/server.cjs",
@@ -14,7 +16,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "test:build": "next build && vitest run --config vitest.build.config.mts",
+    "test:build": "node scripts/copy-vendor.mjs && next build && vitest run --config vitest.build.config.mts",
     "test:sandbox:linux": "docker build --target sandbox-test -t portail-sandbox-test . && docker run --rm portail-sandbox-test"
   },
   "engines": {
@@ -42,6 +44,7 @@
     "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "monaco-editor": "0.57.0",
     "tailwindcss": "4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5",

@@ -299,7 +299,11 @@ T0 ─── Phase gemmes (individuelle, ≤ 33 min) ───┬── Portail 
   Ouvrir le lien ne lance pas le chrono (un aperçu de lien dans Teams ne
   doit rien déclencher).
 - Règles des gemmes (2026-11-12) : Quiz = une tentative, gemme acquise
-  quel que soit le résultat ; Logique = essais illimités, 5 s entre deux.
+  quel que soit le résultat ; Logique = essais illimités, 5 s entre deux ;
+  SQL et Algo = soumissions illimitées, 3 s entre deux, gemme quand tout
+  passe (jeu visible et jeu caché pour SQL, tests cachés pour Algo). Le
+  candidat ne voit que « X / Y » ; le détail (raison de l'écart, erreur
+  par test) est journalisé pour le recruteur.
 - À `T0+33`, le Portail s'ouvre même s'il manque des gemmes ; les gemmes
   manquantes sont journalisées et visibles du recruteur, jamais du
   candidat. En solo, même règle avec un seul candidat.
