@@ -3,6 +3,8 @@ import type { GemId } from "@/engine/timeline";
 import { checkLogique, LOGIQUE_COOLDOWN_MS } from "@/engine/validators/logique";
 import { gradeQuiz } from "@/engine/validators/quiz";
 import { CODE_SUBMIT_COOLDOWN_MS, normalizeSqlQuery } from "@/engine/validators/sql";
+import { normalizePythonCode } from "@/engine/validators/algo";
+import { gradeAlgo } from "@/server/grading/algo";
 import { gradeSql, type RunJob } from "@/server/grading/sql";
 import { appendEvents } from "@/server/candidate/events";
 import { assertCanSubmit, type CandidateView } from "@/server/candidate/session";
@@ -111,10 +113,37 @@ export async function submitLogique(
 }
 
 /**
- * Gemme SQL (règle du 2026-11-12) : soumissions illimitées, espacées d'au
- * moins CODE_SUBMIT_COOLDOWN_MS ; gemme quand le résultat est juste sur le
- * jeu visible ET sur le jeu caché.
+ * Soumission SQL ou Algo (règle du 2026-11-12) : illimitée, espacée d'au
+ * moins CODE_SUBMIT_COOLDOWN_MS ; gemme quand toutes les vérifications
+ * passent. Le détail de la correction va au journal (recruteur), le
+ * candidat ne reçoit que « X / Y ».
  */
+async function submitCode(
+  db: Db,
+  view: CandidateView,
+  gem: "sql" | "algo",
+  now: Date,
+  submission: Record<string, unknown>,
+  grade: () => Promise<{ passed: number; total: number; publicError?: string; detail: Record<string, unknown> }>,
+): Promise<CodeResponse> {
+  await assertCooldown(db, view.sessionId, `${gem}.submit`, CODE_SUBMIT_COOLDOWN_MS, now);
+  await appendEvents(db, view.sessionId, "candidat", [{ type: `${gem}.submit`, payload: submission }], now);
+
+  const g = await grade(); // lève SandboxUnavailableError
+  const ok = g.passed === g.total;
+  const gemEvents = ok && (await markGem(db, view.sessionId, gem)) ? [{ type: "gem.obtained", payload: { gem } }] : [];
+  await appendEvents(db, view.sessionId, "systeme", [{ type: `${gem}.result`, payload: g.detail }, ...gemEvents], now);
+  return {
+    ok,
+    gem: ok,
+    passed: g.passed,
+    total: g.total,
+    ...(g.publicError ? { error: g.publicError } : {}),
+    ...(ok ? {} : { retryAfterMs: CODE_SUBMIT_COOLDOWN_MS }),
+  };
+}
+
+/** Gemme SQL : jeu visible ET jeu caché (anti codage en dur). */
 export async function submitSql(
   db: Db,
   view: CandidateView,
@@ -126,19 +155,27 @@ export async function submitSql(
   assertCanSubmit(view, now);
   if (view.gems.includes("sql")) return { ok: true, gem: true, passed: 2, total: 2 };
   const query = normalizeSqlQuery(rawQuery); // lève MalformedAnswerError
-  await assertCooldown(db, view.sessionId, "sql.submit", CODE_SUBMIT_COOLDOWN_MS, now);
-  await appendEvents(db, view.sessionId, "candidat", [{ type: "sql.submit", payload: { query } }], now);
+  return submitCode(db, view, "sql", now, { query }, async () => {
+    const g = await gradeSql(stage, query, run);
+    return { passed: g.passed, total: g.total, publicError: g.error, detail: g };
+  });
+}
 
-  const grade = await gradeSql(stage, query, run); // lève SandboxUnavailableError
-  const ok = grade.passed === grade.total;
-  const gemEvents = ok && (await markGem(db, view.sessionId, "sql")) ? [{ type: "gem.obtained", payload: { gem: "sql" } }] : [];
-  await appendEvents(db, view.sessionId, "systeme", [{ type: "sql.result", payload: grade }, ...gemEvents], now);
-  return {
-    ok,
-    gem: ok,
-    passed: grade.passed,
-    total: grade.total,
-    ...(grade.error ? { error: grade.error } : {}),
-    ...(ok ? {} : { retryAfterMs: CODE_SUBMIT_COOLDOWN_MS }),
-  };
+/** Gemme Algo : tests cachés exécutés dans le bac à sable. */
+export async function submitAlgo(
+  db: Db,
+  view: CandidateView,
+  stage: ScenarioInstance["stages"]["algo"],
+  rawCode: unknown,
+  now: Date,
+  run: RunJob,
+): Promise<CodeResponse> {
+  assertCanSubmit(view, now);
+  const total = stage.private.hiddenTests.length;
+  if (view.gems.includes("algo")) return { ok: true, gem: true, passed: total, total };
+  const code = normalizePythonCode(rawCode); // lève MalformedAnswerError
+  return submitCode(db, view, "algo", now, { code }, async () => {
+    const g = await gradeAlgo(stage, code, run);
+    return { passed: g.passed, total: g.total, publicError: g.publicError, detail: g };
+  });
 }

@@ -7,9 +7,6 @@ import { Countdown } from "./Countdown";
 import { EventTracker } from "./EventTracker";
 import { StartButton } from "./StartButton";
 
-/** Épreuves jouables à ce stade de la roadmap (Algo : étape 7). */
-const PLAYABLE = new Set<string>(["quiz", "sql", "logique"]);
-
 const GEM_STYLE: Record<string, string> = {
   quiz: "from-amber-400 to-orange-500",
   sql: "from-sky-400 to-blue-600",
@@ -85,7 +82,7 @@ async function SessionScreen() {
       <ul className="grid gap-4 sm:grid-cols-2">
         {GEM_IDS.map((gem) => {
           const done = view.gems.includes(gem);
-          const playable = PLAYABLE.has(gem) && !done;
+          const playable = !done;
           const card = (
             <div
               className={`flex h-full items-center gap-4 rounded-xl border p-4 ${
@@ -99,7 +96,7 @@ async function SessionScreen() {
               <span className="space-y-0.5">
                 <span className="block font-medium">{content.stages[gem].title}</span>
                 <span className="block text-sm text-zinc-600 dark:text-zinc-400">
-                  {done ? "Gemme obtenue" : playable ? "Disponible" : "Bientôt disponible"}
+                  {done ? "Gemme obtenue" : "Disponible"}
                 </span>
               </span>
             </div>

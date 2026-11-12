@@ -209,8 +209,8 @@ drapeaux, pas Python :
   lus dans `node_modules`. Pyodide est configuré pour ne jamais retomber
   sur son CDN (`packageBaseUrl`, `lockFileURL` et `packageCacheDir`
   locaux) ; aucun paquet supplémentaire (`numpy`…) n'est disponible.
-  Le Pyodide côté navigateur (étape 7) devra être servi depuis
-  l'application, même version.
+  Le Pyodide côté navigateur (étape 7) est servi par l'application
+  (`public/vendor`, copié par `scripts/copy-vendor.mjs`), même version.
 
 **Serveur root, enfants « bac » (décision du 2026-11-12).** Seul un
 processus root (ou doté de `CAP_SETUID`) peut lancer un enfant sous un
@@ -275,8 +275,9 @@ Alternatives écartées :
    en faire fuiter quelques bits par le motif réussite/échec ou la durée.
    Négligeable pour un entretien.
 7. **Tests cachés et sortie standard** : le bac à sable renvoie stdout et
-   les valeurs brutes ; c'est au validateur (étape 7) de n'exposer que
-   « X / Y » pour les tests cachés.
+   les valeurs brutes ; le validateur (`src/server/grading/algo.ts`)
+   n'expose que « X / Y » et les erreurs indépendantes des entrées
+   cachées (compilation, délai, mémoire).
 
 ### 3.6 Chrono serveur
 

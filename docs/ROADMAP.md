@@ -98,7 +98,7 @@ dans le processus serveur (sql.js) et n'atteint jamais l'enfant. Réponse
 au candidat : « X / 2 » et l'erreur de sa requête (syntaxe, délai).
 Règle de gemme décidée le 2026-11-12 (ARCHITECTURE.md § 3.7).
 
-### Étape 7 — Gemme Algo Python
+### Étape 7 — Gemme Algo Python ✅ (2026-11-12)
 - Monaco Python + Pyodide navigateur avec exemples publics.
 - Tests cachés exécutés dans le bac à sable ; réponse « X / Y ».
 - Instantanés de code toutes les ~5 s dans `events`.
@@ -106,6 +106,15 @@ Règle de gemme décidée le 2026-11-12 (ARCHITECTURE.md § 3.7).
 **Terminé quand** : test du validateur (solution juste, solution fausse,
 solution trop lente, tentative d'afficher les tests cachés → rien ne
 fuit dans la réponse) ; parcours complet des 4 gemmes en local.
+
+Réalisé : Pyodide 314.0.7 servi depuis `public/vendor/pyodide` (même
+version que le bac à sable, `packageBaseUrl` local) dans un Web Worker de
+type module, gardé chargé entre deux essais et recréé après 5 s
+d'exécution. Réponse au candidat : « X / 7 » et, seulement si elle ne
+dépend d'aucune entrée cachée, l'erreur de compilation ou « Temps
+d'exécution dépassé ». Le détail par test (erreur, durée) est journalisé
+pour le recruteur (`algo.result`). Parcours des 4 gemmes vérifié sur un
+build de production local.
 
 ### Étape 8 — Portail en binôme
 - Socket.IO dans `server.ts`, salle par créneau, authentification du

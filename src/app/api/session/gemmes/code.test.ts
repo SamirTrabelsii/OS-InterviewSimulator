@@ -17,6 +17,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))("routes des gemmes SQL et Algo
   const { loadInstance, allCanaries } = await import("@/server/content/registry");
   const { getSandbox } = await import("@/server/sandbox/pool");
   const sqlRoute = await import("./sql/route");
+  const algoRoute = await import("./algo/route");
 
   getSandbox().prewarm();
   const created: string[] = [];
@@ -99,6 +100,36 @@ describe.runIf(Boolean(process.env.DATABASE_URL))("routes des gemmes SQL et Algo
     it("refusée après la fin (chrono serveur)", async () => {
       clock = at(45);
       expect((await call(sqlRoute, { query: "SELECT 1" })).status).toBe(409);
+    });
+  });
+
+  describe("Algo", () => {
+    it("code faux → X / Y sans gemme ni fuite ; code juste → gemme ; tout est journalisé", async () => {
+      const algo = (await instance()).stages.algo;
+      const total = algo.private.hiddenTests.length;
+      const spy = "import json\ndef compter_scans(scans, k):\n    print(json.dumps(scans))\n    return {s: 1 for _, s in scans}\n";
+      const r1 = await call(algoRoute, { code: spy });
+      expect(r1).toMatchObject({ status: 200, body: { ok: false, gem: false, total } });
+      expect(r1.body.passed).toBeLessThan(total);
+      assertOnlyScore(r1.text, r1.body);
+      expect(r1.text).not.toContain("DEC-041"); // SKU présent seulement dans les tests cachés
+      expect(await gems()).not.toContain("algo");
+
+      clock = at(1.1);
+      const r2 = await call(algoRoute, { code: algo.private.referenceSolution.replace(/^#.*\n/, "") });
+      expect(r2).toMatchObject({ status: 200, body: { ok: true, gem: true, passed: total, total } });
+      assertOnlyScore(r2.text, r2.body);
+      expect(await gems()).toContain("algo");
+
+      const log = (await events()).filter((e) => ["algo.submit", "algo.result", "gem.obtained"].includes(e.type));
+      expect(log.map((e) => e.type)).toEqual(["algo.submit", "algo.result", "algo.submit", "algo.result", "gem.obtained"]);
+      expect(log[0].payload).toEqual({ code: spy });
+      expect((log[1].payload as { cases: unknown[] }).cases).toHaveLength(total);
+    });
+
+    it("un code vide est refusé sans compter comme essai", async () => {
+      expect((await call(algoRoute, { code: "" })).status).toBe(400);
+      expect((await events()).some((e) => e.type === "algo.submit")).toBe(false);
     });
   });
 });
