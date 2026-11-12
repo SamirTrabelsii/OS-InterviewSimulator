@@ -26,6 +26,8 @@ export const slots = pgTable("slots", {
   mode: slotMode("mode").notNull(),
   status: slotStatus("status").notNull().default("planifie"),
   scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull(),
+  // T0 commun aux candidats du créneau : premier clic sur « Commencer ».
+  startedAt: timestamp("started_at", { withTimezone: true }),
   createdBy: text("created_by").notNull(), // email du recruteur
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

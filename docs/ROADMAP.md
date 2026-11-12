@@ -44,7 +44,7 @@ graines différentes → données différentes), validation Zod de tout
 email non vérifié) ; test que les routes recruteur renvoient 401 sans
 session ; création de créneau manuelle OK en local.
 
-### Étape 3 — Accès candidat, chrono serveur, journal
+### Étape 3 — Accès candidat, chrono serveur, journal ✅ (2026-11-12)
 - `/s/<jeton>` → vérification fenêtre de validité → cookie de session.
 - Démarrage : `started_at`, `deadline`, graine.
 - Écran d'accueil : information « actions enregistrées, conservées
