@@ -34,7 +34,9 @@ graines différentes → données différentes), validation Zod de tout
 `next build`, aucun canari dans `.next/static`.
 
 ### Étape 2 — Connexion recruteur et création de créneau
-- Auth.js Google, restriction de domaine (`hd` + callback `signIn`).
+- Auth.js Google, restriction de domaine (`hd` + callback `signIn`),
+  règle indépendante du fournisseur (Entra ID ajouté plus tard).
+- Faux fournisseur « Connexion de test » en dev (`AUTH_DEV_LOGIN=true`).
 - Page recruteur : créer un créneau (scénario, solo/binôme, heure),
   obtenir les liens candidats (jeton aléatoire, hash en base).
 
@@ -45,6 +47,8 @@ session ; création de créneau manuelle OK en local.
 ### Étape 3 — Accès candidat, chrono serveur, journal
 - `/s/<jeton>` → vérification fenêtre de validité → cookie de session.
 - Démarrage : `started_at`, `deadline`, graine.
+- Écran d'accueil : information « actions enregistrées, conservées
+  6 mois » avant le démarrage.
 - API d'événements par lots ; écran « hub » avec les 4 gemmes et le
   compte à rebours synchronisé.
 
@@ -91,9 +95,12 @@ fuit dans la réponse) ; parcours complet des 4 gemmes en local.
 ### Étape 8 — Portail en binôme
 - Socket.IO dans `server.ts`, salle par créneau, authentification du
   socket par le cookie candidat.
-- Pilote / copilote (verrou serveur, « demander la main »), diffusion
+- Pilote / copilote à **vues asymétriques** (pilote : code ; copilote :
+  logs + contexte client), filtrées côté serveur ; « demander la main »
+  échange rôles et vues. Diffusion
   du code, persistance `portal_rooms`, reconnexion.
-- Ouverture du Portail selon l'heure serveur ; repli solo ; observateur
+- Ouverture du Portail dès que les 2 ont leurs 4 gemmes, au plus tard à
+  T0+33 ; repli solo ; observateur
   recruteur en lecture seule.
 - Validation du debug dans le bac à sable.
 
@@ -137,7 +144,7 @@ sortante.
 
 ### Étape 13 — Durcissement
 - Limitation de débit, en-têtes de sécurité (CSP compatible Monaco et
-  Pyodide), purge RGPD planifiée, détection perte de focus (journalisée,
+  Pyodide), purge RGPD planifiée (6 mois), détection perte de focus (journalisée,
   jamais bloquante).
 
 **Terminé quand** : tests de limitation de débit et de purge ; revue de

@@ -23,8 +23,10 @@ Même structure pour tous : quiz, SQL, algo, logique, binôme, rapport final.
 - Monaco Editor (code et SQL), sql.js (SQL dans le navigateur)
 - Pyodide : côté candidat pour essayer ; côté serveur (worker avec
   délai maximum, sans accès aux secrets) pour les tests cachés
-- Connexion recruteurs : Auth.js avec Google, limitée au domaine de
-  l'entreprise
+- Connexion recruteurs : Auth.js avec Google Workspace, limitée au
+  domaine de l'entreprise ; Microsoft 365 (Entra ID) à ajouter ensuite.
+  Règle d'autorisation indépendante du fournisseur. En dev : faux
+  fournisseur (AUTH_DEV_LOGIN=true), jamais actif en production
 - Assistant IA « Bip » : optionnel, désactivé par défaut, derrière une
   interface interchangeable (Groq ; faux assistant pour les tests)
 
@@ -41,7 +43,12 @@ Même structure pour tous : quiz, SQL, algo, logique, binôme, rapport final.
 
 ## Règles
 - Les solutions et tests cachés ne sont JAMAIS envoyés au navigateur.
-- Le chrono fait foi côté serveur.
+- Le chrono fait foi côté serveur. Le Portail s'ouvre dès que les deux
+  candidats ont leurs 4 gemmes, au plus tard à T0+33 min (fin à T0+45).
+- Portail : pilote / copilote à vues asymétriques (pilote = code,
+  copilote = logs + contexte client). Le serveur n'envoie à chacun que
+  sa vue.
+- Replays conservés 6 mois, annoncé au candidat avant le démarrage.
 - Chaque action du candidat est journalisée (table events) pour le replay.
 - Aucun secret dans le code ni dans Git : .env.local en dev,
   Secret Manager en prod.

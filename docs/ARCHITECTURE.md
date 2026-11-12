@@ -13,7 +13,9 @@
 | Accès candidat | **Lien unique à jeton**, valable sur un créneau ; même lien utilisable sur un PC du bureau (présentiel) | Réponse utilisateur |
 | Binôme | **Deux candidats** sur le même créneau, en appel Teams (le recruteur peut y être). La voix passe par Teams, pas par l'application | Réponse utilisateur |
 | Replay | **Événements clés + instantanés du code** (~ toutes les 5 s quand il change) | Réponse utilisateur |
-| Recruteurs | Comptes Google du domaine de l'entreprise (Auth.js) | CLAUDE.md |
+| Recruteurs | Google Workspace d'abord, Microsoft 365 (Entra ID) ensuite (Auth.js) ; faux fournisseur en dev | Décision 2026-11-12 |
+| Portail | S'ouvre dès que les 2 ont leurs 4 gemmes, au plus tard à T0+33 ; pilote / copilote à vues asymétriques | Décision 2026-11-12 |
+| Replays | Conservés 6 mois, annoncé au candidat au démarrage | Décision 2026-11-12 |
 
 ## 2. Vue d'ensemble
 
@@ -102,6 +104,25 @@ le serveur le relaie et l'enregistre en instantané.
 - Simple, sans conflit d'édition possible.
 - Lisible au replay : qui a tapé quoi, combien de passages de clavier.
 
+**Vues asymétriques (décision du 2026-11-12)** : pour forcer la
+communication, chaque rôle ne voit qu'une partie de l'information.
+
+| Rôle | Voit | Ne voit pas |
+|---|---|---|
+| Pilote (clavier) | l'éditeur de code, le résultat « X / Y tests » | les logs, le contexte client |
+| Copilote | les logs d'exécution, le ticket / contexte client, les exemples | le code |
+| Recruteur (observateur) | tout | — |
+
+- Le serveur n'envoie à chaque socket **que** les données de sa vue (le
+  filtrage est côté serveur, pas un simple masquage CSS).
+- « Demander la main » échange les rôles **et donc les vues** ; chaque
+  échange est journalisé.
+- Le contenu du Portail gagne deux champs publics : `logs` et
+  `clientContext` (étape 8).
+
+Réglages par défaut, à ajuster après les premiers entretiens : échange de
+rôles libre, logs rafraîchis à chaque exécution du pilote.
+
 Écarté pour la v1 : **Yjs / CRDT** (édition simultanée). Plus riche mais
 ajoute un fournisseur Socket.IO maison, la persistance de documents Yjs et
 des cas de bord. Réversible plus tard sans toucher au reste.
@@ -171,11 +192,15 @@ Les phases (gemmes / Portail) sont dérivées de l'heure serveur.
 ### 3.7 Déroulé d'un créneau en binôme
 
 ```
-T0 ─── Phase gemmes (individuelle, ~30 min) ───┬── Portail en binôme (~15 min) ── T0+45
-                                                └ ouvre à min(les 2 ont 4 gemmes, T0+30)
+T0 ─── Phase gemmes (individuelle, ≤ 33 min) ───┬── Portail en binôme (≥ 12 min) ── T0+45
+                                                 └ ouvre dès que les 2 ont leurs 4 gemmes,
+                                                   au plus tard à T0+33 (décision du 2026-11-12)
 ```
 
 - Les deux candidats démarrent au même `T0` (créneau du binôme).
+- À `T0+33`, le Portail s'ouvre même s'il manque des gemmes ; les gemmes
+  manquantes sont journalisées et visibles du recruteur, jamais du
+  candidat. En solo, même règle avec un seul candidat.
 - Le plus rapide attend sur un écran « Le Portail s'éveille… » (bonus
   facultatif possible plus tard).
 - **Repli solo** : si un candidat est absent, le recruteur bascule la
@@ -195,17 +220,36 @@ T0 ─── Phase gemmes (individuelle, ~30 min) ───┬── Portail en 
    replay.
 5. Présentiel : le recruteur ouvre le lien sur le PC du bureau, en
    fenêtre privée.
+6. Écran d'accueil : avant de démarrer, le candidat est informé que ses
+   actions sont enregistrées pour le replay et **conservées 6 mois**
+   (décision du 2026-11-12). Le démarrage vaut prise de connaissance et
+   est journalisé.
 
 Écartés : comptes candidats (friction inutile pour 45 min), lien magique
 par email (dépend d'un service d'envoi).
 
 ### 3.9 Recruteurs
 
-Auth.js + Google, paramètre `hd=<domaine>` **et** vérification serveur
-dans le callback `signIn` (`email_verified` + suffixe du domaine), car
-`hd` seul est contournable. Sessions **JWT** (pas de tables d'adaptateur),
-durée 8 h. Toutes les routes `/recruteur/*` et les données de notation
-sont protégées côté serveur.
+**Décision du 2026-11-12 : Google Workspace d'abord, Microsoft 365
+(Entra ID) ensuite.** La règle d'autorisation est indépendante du
+fournisseur : une fonction `isAllowedRecruiter(profil)` vérifie l'email
+vérifié et le domaine (`RECRUITER_EMAIL_DOMAIN`). Ajouter Entra ID =
+déclarer un fournisseur de plus dans Auth.js et brancher le contrôle de
+son tenant (`tid`) ; rien d'autre ne change.
+
+- **Google** : paramètre `hd=<domaine>` **et** vérification serveur dans
+  le callback `signIn` (`email_verified` + domaine), car `hd` seul est
+  contournable.
+- **Microsoft Entra ID** (plus tard) : application mono-tenant + contrôle
+  du `tid` et du domaine dans le même callback.
+- **Faux fournisseur en dev** : un fournisseur « Connexion de test » qui
+  accepte un email du domaine autorisé sans mot de passe. Il n'existe que
+  si `NODE_ENV !== "production"` **et** `AUTH_DEV_LOGIN=true` ; un test
+  vérifie qu'il est absent en production.
+
+Sessions **JWT** (pas de tables d'adaptateur), durée 8 h. Toutes les
+routes `/recruteur/*` et les données de notation sont protégées côté
+serveur.
 
 ### 3.10 Contenu et graine
 
@@ -280,10 +324,14 @@ hors contrainte d'hébergement).
 ## 5. Questions ouvertes
 
 1. ~~**Standalone**~~ : abandonné, validé le 2026-11-10 (§ 3.1).
-2. **Portail** : ouverture à `T0+30` ou dès que les deux ont leurs
-   gemmes — durées à confirmer.
-3. **RGPD** : durée de conservation des sessions et replays (proposition :
-   purge automatique à 6 mois), et texte d'information au candidat.
-4. **Grille de compétences** et **profils** (ex. back, data, full-stack) :
-   à fournir pour l'étape 8.
-5. **Domaine Google** autorisé pour les recruteurs.
+2. ~~**Portail**~~ : s'ouvre dès que les deux ont leurs 4 gemmes, au plus
+   tard à `T0+33` (2026-11-12, § 3.7).
+3. ~~**RGPD**~~ : conservation 6 mois, annoncée au candidat en début de
+   session ; purge automatique à l'étape 13 (2026-11-12, § 3.8).
+4. **Grille de compétences** et **profils** : fournis avant l'étape 9.
+5. **Domaine** autorisé pour les recruteurs (`RECRUITER_EMAIL_DOMAIN`) et
+   identifiants OAuth Google : nécessaires seulement pour la vraie
+   connexion ; le dev utilise le faux fournisseur.
+6. **Microsoft 365 (Entra ID)** : à ajouter après Google (§ 3.9).
+7. ~~**Portail en binôme**~~ : pilote / copilote avec vues asymétriques
+   (2026-11-12, § 3.3).
