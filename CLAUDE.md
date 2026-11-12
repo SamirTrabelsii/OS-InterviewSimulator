@@ -31,13 +31,14 @@ Même structure pour tous : quiz, SQL, algo, logique, binôme, rapport final.
   interface interchangeable (Groq ; faux assistant pour les tests)
 
 ## Hébergement (Google Cloud, version économique)
-- Un seul service Cloud Run "portail" : min 0, max 1 instance,
+- Un seul service Cloud Run "portail" : 2 vCPU, min 0, max 1 instance,
   affinité de session, timeout 3600 s (WebSockets)
 - Cloud SQL PostgreSQL db-f1-micro, HDD 10 Go, une zone, sauvegardes
   automatiques, connexion intégrée Cloud Run (socket Unix)
 - Cloud Scheduler : base allumée 8h-20h en semaine pendant les campagnes
 - Secret Manager pour tous les secrets, injectés en variables d'env
-- Compte de service dédié : Cloud SQL Client, Secret Accessor
+- Compte de service dédié : Cloud SQL Client, Secret Accessor par
+  secret (portail-*), jamais au niveau du projet
 - Déploiement : gcloud run deploy --source (voir DEPLOY.md)
 - En local : docker compose avec Postgres
 
