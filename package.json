@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx --env-file-if-exists=.env.local server.ts",
     "build": "next build && npm run build:server",
-    "build:server": "esbuild server.ts --bundle --platform=node --target=node24 --format=cjs --packages=external --define:process.env.NODE_ENV='\"production\"' --outfile=dist/server.cjs",
+    "build:server": "esbuild server.ts --bundle --platform=node --target=node26 --format=cjs --packages=external --define:process.env.NODE_ENV='\"production\"' --outfile=dist/server.cjs",
     "start": "node --env-file-if-exists=.env.local dist/server.cjs",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -17,21 +17,23 @@
     "test:build": "next build && vitest run --config vitest.build.config.mts"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=26"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
     "next": "16.4.6",
     "next-auth": "5.0.0-beta.32",
     "pg": "^8.23.1",
+    "pyodide": "314.0.7",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "^0.0.1",
+    "sql.js": "^1.16.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",
-    "@types/node": "^24.19.2",
+    "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",

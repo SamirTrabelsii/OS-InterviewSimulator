@@ -10,7 +10,7 @@ partir d'un replay.
 
 ## Démarrer en local
 
-Prérequis : Node.js 24, Docker.
+Prérequis : Node.js 26 (LTS, requis par le bac à sable : permission réseau), Docker.
 
 ```bash
 npm install

@@ -64,7 +64,7 @@ simulée), événements ordonnés par `seq`.
 mauvaise réponse, réponse mal formée) ; la réponse API ne contient
 jamais la solution ; parcours manuel : obtenir 2 gemmes.
 
-### Étape 5 — Bac à sable serveur
+### Étape 5 — Bac à sable serveur ✅ (2026-11-12)
 - Processus enfant : `env: {}`, `--permission`, timeout, plafond
   mémoire, sortie tronquée, processus jeté après usage, 1 processus chaud.
 - Moteurs : sql.js et Pyodide (`jsglobals` minimal, pas de `fetch`).
@@ -73,6 +73,12 @@ jamais la solution ; parcours manuel : obtenir 2 gemmes.
 `os.environ` vide, `import js` sans `process`/`fetch`, lecture de fichier
 hors répertoire autorisé refusée, allocation mémoire excessive arrêtée,
 2 exécutions successives sans état partagé.
+
+Réalisé avec Node 26 LTS (permission réseau). Tests ajoutés : accès réseau
+(urllib, sockets, `NODEFS`/`SOCKFS` via `pyodide_js`), lancement de
+processus, évasion par `Function`, sortie géante, SQL en écriture ou
+multi-instructions, file pleine, et un script JS hostile lancé avec les
+drapeaux de l'enfant (frontière Node). Limites : ARCHITECTURE.md § 3.5.
 
 ### Étape 6 — Gemme SQL
 - Monaco SQL + sql.js dans le navigateur (jeu de données visible).

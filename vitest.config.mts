@@ -18,8 +18,28 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts", "content/**/*.test.ts", "tests/**/*.test.ts"],
     // Tests qui exigent un `next build` préalable : npm run test:build
     exclude: ["tests/build/**", "node_modules/**"],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          include: ["src/**/*.test.ts", "content/**/*.test.ts", "tests/**/*.test.ts"],
+          exclude: ["tests/build/**", "node_modules/**", "src/server/sandbox/**"],
+          sequence: { groupOrder: 0 },
+        },
+      },
+      {
+        // Bac à sable : vrais processus Pyodide, gourmands en CPU. Lancés
+        // après les autres pour ne pas leur faire dépasser leurs délais.
+        extends: true,
+        test: {
+          name: "sandbox",
+          include: ["src/server/sandbox/**/*.test.ts"],
+          sequence: { groupOrder: 1 },
+        },
+      },
+    ],
   },
 });

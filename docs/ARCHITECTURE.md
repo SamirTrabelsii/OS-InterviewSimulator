@@ -152,27 +152,62 @@ profondeur :
 
 ### 3.5 Exécution du code candidat côté serveur
 
-Un **processus enfant Node** (`child_process.fork`) par exécution :
+Code : `src/server/sandbox/pool.ts` (parent), `sandbox/child.mjs` (enfant),
+tests : `src/server/sandbox/sandbox.test.ts`.
 
-- `env: {}` → aucun secret visible ;
-- **modèle de permissions Node** (`--permission`, lecture seule limitée
-  aux fichiers Pyodide/sql.js, pas de `child_process`, pas de workers) ;
-- Pyodide chargé avec un `jsglobals` minimal et `fetch` supprimé, pour
-  que `import js` ne donne accès à rien d'utile ;
-- délai maximum (ex. 5 s algo, 2 s SQL) → `kill('SIGKILL')` ;
-- plafond mémoire, et sortie standard tronquée.
+**Décision validée (2026-11-12) : Node 26 LTS.** Node 24 n'a pas de
+permission réseau ; or un code qui s'évade de Python vers JS (c'est facile :
+`pyodide_js.constructor.constructor`) pourrait interroger le serveur de
+métadonnées Cloud Run, obtenir le jeton du compte de service (Secret
+Accessor) et lire tous les secrets. Node ≥ 25 refuse le réseau sous
+`--permission` sans `--allow-net`.
 
-Un processus « chaud » est préparé à l'avance et **jeté après chaque
-usage** (pas de fuite d'état entre candidats). À 3 sessions simultanées,
-≤ 3 processus de ~150–250 Mo → instance Cloud Run à **2 Gio / 1 vCPU**.
+Un **processus enfant Node** (`child_process.spawn`, pas `fork` : pas de
+canal IPC) par exécution. La frontière de sécurité est ce processus et ses
+drapeaux, pas Python :
+
+- `env: {}` → aucun secret visible (sous Windows, libuv réinjecte quelques
+  variables système non secrètes ; sous Linux l'env est vide) ;
+- **modèle de permissions Node** (`--permission`) : lecture limitée aux
+  dossiers de Pyodide, de sql.js et au script enfant ; **aucune écriture,
+  aucun réseau, ni `child_process`, ni workers, ni addons, ni inspecteur,
+  ni WASI, ni FFI**. Cela couvre aussi `/proc/<ppid>/environ` (secrets du
+  parent) et le montage du vrai disque via `NODEFS` ;
+- `--disallow-code-generation-from-strings` : ferme l'évasion Python →
+  `Function` → contexte global JS (Pyodide fonctionne sans `eval`) ;
+- Pyodide chargé avec un `jsglobals` vide ; `fetch`, `WebSocket`… supprimés ;
+  `pyodide_js`, `pyodide.code`, `pyodide.http`, `micropip` bloqués à
+  l'import ; `process.kill`, `dlopen`… neutralisés (non couverts par le
+  modèle de permissions). Défense en profondeur seulement : contournable ;
+- délai (5 s Python, 2 s SQL, 10 s max) mesuré par le parent →
+  `SIGKILL`, résultats partiels conservés cas par cas ;
+- mémoire : chaque mémoire WASM plafonnée à 256 Mo (on intercepte
+  `WebAssembly.Memory.prototype.grow`, utilisé par emscripten) → `MemoryError`
+  Python / `SQLITE_NOMEM` propres ; tas JS plafonné (`--max-old-space-size`) ;
+  sous Linux, le parent lit aussi la mémoire résidente (`/proc/<pid>/status`)
+  et tue l'enfant au-delà de 600 Mo ;
+- sortie Python tronquée à 64 Ko ; tout ce que l'enfant écrit vers le parent
+  est plafonné à 512 Ko (sinon l'enfant est tué : `output_limit`) ;
+- **l'enfant ne reçoit jamais les attendus des tests** : seulement les
+  entrées ; il renvoie les sorties en JSON et la comparaison se fait dans le
+  parent. Un espace de noms Python neuf par cas de test ;
+- SQL : base générée pour chaque exécution, `PRAGMA query_only = 1`, une
+  seule instruction.
+
+Un processus « chaud » (Pyodide déjà chargé, ~3–6 s) attend la tâche
+suivante ; chaque processus est **jeté après usage** et son remplaçant n'est
+préparé qu'après la fin de la tâche (sur 1 vCPU, un chargement en parallèle
+ralentirait l'exécution chronométrée). Au plus **2 exécutions simultanées**,
+file de 8, au-delà réponse `busy`. Budget : Next ~300–400 Mo + 1 chaud
+~150 Mo + 2 × (256 Mo + surcoût) ≈ 1,2 Go → instance Cloud Run à
+**2 Gio / 1 vCPU**. L'image Docker doit contenir `sandbox/child.mjs` et
+`node_modules/pyodide`, `node_modules/sql.js`.
 
 Le **SQL du candidat ne touche jamais PostgreSQL** : il est exécuté dans
 sql.js (SQLite WASM), dans le même bac à sable, sur une base générée
 depuis la graine, puis comparé au résultat de la requête solution.
 
-Risque résiduel accepté : le processus enfant a accès réseau (Cloud Run ne
-filtre pas par processus). Il ne contient rien d'autre que l'énoncé et les
-tests de l'épreuve en cours.
+Risques résiduels acceptés : voir « Limites du bac à sable » ci-dessous.
 
 Alternatives écartées :
 - *Worker thread* : même processus, isolation plus faible.
@@ -181,6 +216,29 @@ Alternatives écartées :
 - *Cloud Run Jobs / service « juge » séparé sans compte de service* :
   meilleure isolation mais démarrage à froid à chaque soumission et un 2ᵉ
   déploiement. **Plan B** si un audit de sécurité l'exige.
+
+#### Limites du bac à sable (2026-11-12)
+
+1. **Une évasion Python → JS reste possible** (Pyodide n'est pas conçu
+   comme un bac à sable). Le code évadé reste enfermé par le modèle de
+   permissions de Node ; une faille de ce modèle ou de V8 serait une
+   évasion complète (même utilisateur Linux que le serveur, pas
+   d'espace de noms ni de seccomp sur Cloud Run).
+2. **Neutralisation de `process.kill` non testée de bout en bout** : aucun
+   chemin d'évasion connu vers `process` une fois `Function` bloqué ; le
+   modèle de permissions ne couvre pas les signaux.
+3. **Plafond RSS sous Linux seulement** ; ailleurs (dev Windows) on compte
+   sur les plafonds WASM et du tas JS.
+4. **Le code évadé pourrait contourner le plafond WASM** (il est posé en JS
+   dans l'enfant) → reste le plafond RSS (Linux) et l'OOM du conteneur.
+5. **Partage du CPU** : sur 1 vCPU, une exécution lente d'un candidat
+   ralentit les autres et le serveur web pendant ≤ 10 s.
+6. **Canal auxiliaire** : le code candidat voit les entrées cachées et peut
+   en faire fuiter quelques bits par le motif réussite/échec ou la durée.
+   Négligeable pour un entretien.
+7. **Tests cachés et sortie standard** : le bac à sable renvoie stdout et
+   les valeurs brutes ; c'est au validateur (étape 7) de n'exposer que
+   « X / Y » pour les tests cachés.
 
 ### 3.6 Chrono serveur
 

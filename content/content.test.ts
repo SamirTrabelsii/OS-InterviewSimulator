@@ -13,7 +13,8 @@ describe.each(scenarios.map((s) => [s.meta.id, s] as const))("scénario %s", (_i
   // Générées une seule fois : buildInstance valide déjà Zod et les canaris.
   let instances: ReturnType<typeof buildInstance>[] = [];
 
-  it("chaque graine produit une instance valide (Zod + canaris)", () => {
+  // 60 graines : 2,5 à 9 s selon la charge de la machine → délai explicite.
+  it("chaque graine produit une instance valide (Zod + canaris)", { timeout: 30_000 }, () => {
     instances = SEEDS.map((seed) => buildInstance(def, seed));
     expect(instances).toHaveLength(SEEDS.length);
   });
