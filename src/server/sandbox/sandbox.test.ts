@@ -1,9 +1,12 @@
-import { spawn } from "node:child_process";
+import type { ChildProcess } from "node:child_process";
+import { readdirSync, readFileSync } from "node:fs";
 import dgram from "node:dgram";
 import net from "node:net";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { EMPTY_ENV, SandboxPool, sandboxNodeFlags } from "./pool";
+import { spawn } from "node:child_process";
+import os from "node:os";
+import { DEFAULT_OPTIONS, EMPTY_ENV, SandboxPool, resolveSandboxUser, sandboxPaths, spawnSandboxProcess } from "./pool";
 import type { SandboxResult } from "./protocol";
 
 // Tests d'intégration : vrais processus enfants, vrai Pyodide, vrai sql.js.
@@ -16,6 +19,21 @@ const ROOT = process.cwd();
 const FORBIDDEN_FILE = path.join(ROOT, "package.json"); // existe, hors liste autorisée
 const CANARY_ENV = "SANDBOX_TEST_SECRET";
 const CANARY_VALUE = "CANARI-env-7f3a91";
+// Dans le conteneur de test Linux (npm run test:sandbox:linux) : SANDBOX_USER=bac.
+const SANDBOX_USER = resolveSandboxUser(process.env.SANDBOX_USER);
+const ON_LINUX_WITH_USER = process.platform === "linux" && SANDBOX_USER !== undefined;
+const ISOLATION = { rootDir: ROOT, jsHeapMb: 128, user: SANDBOX_USER, priority: DEFAULT_OPTIONS.priority };
+
+/** Attend la fin d'un processus et renvoie sa sortie standard. */
+function collect(child: ChildProcess): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let out = "";
+    let err = "";
+    child.stdout!.on("data", (d: Buffer) => (out += d));
+    child.stderr!.on("data", (d: Buffer) => (err += d));
+    child.on("exit", (code) => (code === 0 ? resolve(out) : reject(new Error(`code ${code}: ${err}`))));
+  });
+}
 
 let pool: SandboxPool;
 let tcp: net.Server;
@@ -26,7 +44,7 @@ let udpMessages = 0;
 
 beforeAll(async () => {
   process.env[CANARY_ENV] = CANARY_VALUE;
-  pool = new SandboxPool({ maxConcurrent: 3, warm: 1 });
+  pool = new SandboxPool({ maxConcurrent: 3, warm: 1, user: SANDBOX_USER });
   pool.prewarm();
 
   // Serveur local « appât » : aucune connexion du bac à sable ne doit l'atteindre.
@@ -380,18 +398,13 @@ describe("frontière Node : JS arbitraire avec les drapeaux de l'enfant", () => 
   it("refuse fichiers, env, processus, workers, réseau, eval et inspecteur", async () => {
     const fixture = path.join(ROOT, "tests", "fixtures", "sandbox-escape.mjs");
     const before = { tcp: tcpConnections, udp: udpMessages };
-    const stdout = await new Promise<string>((resolve, reject) => {
-      const child = spawn(process.execPath, [...sandboxNodeFlags({ rootDir: ROOT, jsHeapMb: 128 }, [fixture]), fixture, FORBIDDEN_FILE, String(port)], {
-        env: EMPTY_ENV,
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      let out = "";
-      let err = "";
-      child.stdout.on("data", (d: Buffer) => (out += d));
-      child.stderr.on("data", (d: Buffer) => (err += d));
-      child.on("exit", (code: number | null) => (code === 0 ? resolve(out) : reject(new Error(`code ${code}: ${err}`))));
-    });
-    const results = JSON.parse(stdout) as Record<string, { ok: boolean; code?: string; error?: string; value?: string }>;
+    const stdout = await collect(
+      spawnSandboxProcess(ISOLATION, fixture, [FORBIDDEN_FILE, String(port)], { extraReadable: [fixture], stdio: ["ignore", "pipe", "pipe"] }),
+    );
+    const { results, info } = JSON.parse(stdout) as {
+      results: Record<string, { ok: boolean; code?: string; error?: string; value?: string }>;
+      info: { priority: number; uid: number | null; signalParent: string };
+    };
 
     for (const [name, r] of Object.entries(results)) {
       expect(r.ok, `${name} aurait dû échouer : ${r.value}`).toBe(false);
@@ -408,5 +421,114 @@ describe("frontière Node : JS arbitraire avec les drapeaux de l'enfant", () => 
     // Laisse passer un éventuel paquet UDP en vol avant de compter.
     await new Promise((r) => setTimeout(r, 200));
     expect({ tcp: tcpConnections, udp: udpMessages }).toEqual(before);
+
+    // Priorité CPU minimale (le serveur web et le temps réel passent d'abord).
+    expect(info.priority).toBe(os.constants.priority.PRIORITY_LOW);
+    if (ON_LINUX_WITH_USER) {
+      expect(info.uid).toBe(SANDBOX_USER!.uid);
+      expect(info.uid).not.toBe(process.getuid!());
+      expect(info.signalParent).toBe("EPERM");
+    }
+  });
+});
+
+describe("chargement local des moteurs", () => {
+  it("fige les versions exactes de Pyodide et sql.js", () => {
+    const pkg = JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8"));
+    const lock = JSON.parse(readFileSync(path.join(ROOT, "package-lock.json"), "utf8"));
+    for (const name of ["pyodide", "sql.js"]) {
+      expect(pkg.dependencies[name], name).toMatch(/^\d+\.\d+\.\d+$/);
+      const locked = lock.packages[`node_modules/${name}`];
+      expect(locked.version, name).toBe(pkg.dependencies[name]);
+      expect(locked.integrity, name).toMatch(/^sha512-/);
+      const installed = JSON.parse(readFileSync(path.join(ROOT, "node_modules", name, "package.json"), "utf8"));
+      expect(installed.version, name).toBe(pkg.dependencies[name]);
+    }
+  });
+
+  it("ne référence aucun CDN : Pyodide est configuré sur ses fichiers locaux", async () => {
+    const out = await pythonJson(`
+import json, sys
+sys.meta_path.pop(0)
+import pyodide_js
+cfg = pyodide_js._api.config
+res = {k: str(getattr(cfg, k, "")) for k in ("indexURL", "packageBaseUrl", "cdnUrl", "lockFileURL", "packageCacheDir")}
+res["version"] = pyodide_js.version
+try:
+    import numpy
+    res["numpy"] = "importé"
+except ModuleNotFoundError:
+    res["numpy"] = "absent"
+print(json.dumps(res))
+`);
+    const pkg = JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8"));
+    expect(out.version).toBe(pkg.dependencies.pyodide);
+    expect(out.numpy).toBe("absent");
+    for (const k of ["indexURL", "packageBaseUrl", "cdnUrl", "lockFileURL", "packageCacheDir"]) {
+      expect(out[k], k).not.toMatch(/^https?:|jsdelivr|cdn\./i);
+      expect(out[k], k).toContain("pyodide");
+    }
+  });
+
+  it("le script enfant ne contient aucune URL distante", () => {
+    const child = readFileSync(path.join(ROOT, "sandbox", "child.mjs"), "utf8");
+    expect(child).not.toMatch(/https?:\/\//);
+  });
+});
+
+describe.runIf(ON_LINUX_WITH_USER)("Linux : utilisateur dédié du bac à sable", () => {
+  it("protège le serveur même SANS le modèle de permissions de Node", async () => {
+    const fixture = path.join(ROOT, "tests", "fixtures", "sandbox-uid-only.mjs");
+    // Volontairement sans --permission : on teste la seule couche « utilisateur ».
+    const child = spawn(process.execPath, [fixture, ROOT], {
+      env: EMPTY_ENV,
+      uid: SANDBOX_USER!.uid,
+      gid: SANDBOX_USER!.gid,
+      cwd: "/",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const results = JSON.parse(await collect(child)) as Record<string, { ok: boolean; code?: string; value?: string }>;
+    for (const [name, r] of Object.entries(results)) {
+      expect(r.ok, `${name} aurait dû échouer : ${r.value}`).toBe(false);
+    }
+    expect(results.signalParent.code).toBe("EPERM");
+    expect(results.readParentEnviron.code).toBe("EACCES");
+    expect(results.writeApp.code).toBe("EACCES");
+  });
+
+  it("tous les threads de l'enfant tournent en priorité minimale (nice 19)", async () => {
+    const { childScript, pyodideDir, sqljsDir } = sandboxPaths(ROOT);
+    const child = spawnSandboxProcess(ISOLATION, childScript, [pyodideDir, sqljsDir]);
+    try {
+      // Attend « ready » : Pyodide chargé, tous les threads de V8 créés.
+      await new Promise<void>((resolve, reject) => {
+        child.stdout!.on("data", (d: Buffer) => d.toString().includes('"ready"') && resolve());
+        child.on("exit", (code) => reject(new Error(`fin prématurée (${code})`)));
+      });
+      const tasks = readdirSync(`/proc/${child.pid}/task`);
+      expect(tasks.length).toBeGreaterThan(1);
+      for (const tid of tasks) {
+        const stat = readFileSync(`/proc/${child.pid}/task/${tid}/stat`, "utf8");
+        // Champ 19 de /proc/.../stat (après le nom entre parenthèses) : nice.
+        const nice = Number(stat.slice(stat.lastIndexOf(")") + 2).split(" ")[16]);
+        expect(nice, `thread ${tid}`).toBe(19);
+      }
+    } finally {
+      child.kill("SIGKILL");
+    }
+  });
+
+  it("le plafond de mémoire résidente tue l'enfant", async () => {
+    // Plafond WASM relevé pour que seul le chien de garde RSS puisse agir.
+    const small = new SandboxPool({ warm: 0, user: SANDBOX_USER, wasmMemoryBytes: 1024 ** 3, rssLimitBytes: 300 * 1024 ** 2 });
+    try {
+      // Toucher chaque page rend la mémoire résidente (pas seulement réservée).
+      const code = "x = bytearray(500 * 1024 ** 2)\nfor i in range(0, len(x), 4096):\n    x[i] = 1\nwhile True:\n    pass";
+      const r = await small.run({ kind: "python", code, timeoutMs: 8_000 });
+      expect(r.status).toBe("memory");
+      expect(r.durationMs).toBeLessThan(8_000);
+    } finally {
+      small.close();
+    }
   });
 });

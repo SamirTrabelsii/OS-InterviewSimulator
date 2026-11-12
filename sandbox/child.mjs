@@ -87,8 +87,14 @@ const capture = (text) => {
 };
 
 const { loadPyodide } = await import(pathToFileURL(`${pyodideDir}/pyodide.mjs`).href);
+// Tout est local : sans `packageBaseUrl`, Pyodide télécharge les paquets
+// manquants depuis cdn.jsdelivr.net (et le réseau est de toute façon refusé).
+const localBase = pathToFileURL(`${pyodideDir}/`).href;
 const pyodide = await loadPyodide({
   indexURL: pyodideDir,
+  packageBaseUrl: localBase,
+  packageCacheDir: pyodideDir,
+  lockFileURL: `${pyodideDir}/pyodide-lock.json`,
   // `import js` ne donne accès qu'à un objet vide.
   jsglobals: Object.create(null),
   env: {},

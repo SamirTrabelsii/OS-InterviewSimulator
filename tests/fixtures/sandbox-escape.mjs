@@ -77,4 +77,17 @@ await attempt("inspector", () => {
   return "ouvert";
 });
 
-process.stdout.write(JSON.stringify(results));
+// Informations (pas des attaques) : vérifiées selon la plate-forme.
+const info = {
+  priority: os.getPriority(),
+  uid: process.getuid?.() ?? null,
+  signalParent: null,
+};
+try {
+  process.kill(process.ppid, 0); // signal 0 : teste seulement le droit
+  info.signalParent = "autorisé";
+} catch (e) {
+  info.signalParent = e.code ?? String(e);
+}
+
+process.stdout.write(JSON.stringify({ results, info }));

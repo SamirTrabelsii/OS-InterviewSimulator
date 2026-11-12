@@ -2,8 +2,10 @@
 // hors de Next (où `server-only` lève une erreur). Il ne contient aucun
 // secret, et `node:child_process` ferait de toute façon échouer un import
 // côté navigateur au build.
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, type ChildProcess, type StdioOptions } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import type { CaseResult, ChildMessage, SandboxJob, SandboxResult, SandboxStatus } from "./protocol";
 
@@ -20,7 +22,12 @@ import type { CaseResult, ChildMessage, SandboxJob, SandboxResult, SandboxStatus
 //     Python → `Function` → JS global) ;
 //   - délai, plafonds mémoire (WASM, tas JS, RSS sous Linux) et sortie
 //     bornée, tous appliqués ou vérifiés par le parent ;
-//   - un processus par exécution, tué ensuite ; un seul « chaud » d'avance.
+//   - un processus par exécution, tué ensuite ; un seul « chaud » d'avance ;
+//   - sous Linux en conteneur : utilisateur système dédié (SANDBOX_USER),
+//     différent de celui du serveur → pas d'accès à /proc/<serveur>, pas de
+//     signal vers le serveur, pas d'écriture dans /app, même si le modèle
+//     de permissions de Node était contourné ;
+//   - priorité CPU minimale : le serveur web et Socket.IO passent d'abord.
 
 export type SandboxOptions = {
   /** Racine du projet (contient node_modules/ et sandbox/). */
@@ -48,6 +55,10 @@ export type SandboxOptions = {
   maxTimeoutMs: number;
   /** Taille maximale du code ou de la requête du candidat. */
   maxCodeBytes: number;
+  /** Utilisateur Linux des enfants (le parent doit être root). */
+  user?: { uid: number; gid: number };
+  /** Priorité des enfants (19 = la plus basse, sous Linux comme sous Windows). */
+  priority: number;
 };
 
 export const DEFAULT_OPTIONS: SandboxOptions = {
@@ -64,7 +75,32 @@ export const DEFAULT_OPTIONS: SandboxOptions = {
   defaultTimeoutMs: { python: 5_000, sql: 2_000 },
   maxTimeoutMs: 10_000,
   maxCodeBytes: 100 * 1024,
+  priority: os.constants.priority.PRIORITY_LOW,
 };
+
+/**
+ * Résout l'utilisateur système des enfants (variable SANDBOX_USER, créé
+ * dans l'image Docker). Échoue bruyamment plutôt que de retomber en
+ * silence sur l'utilisateur du serveur.
+ */
+export function resolveSandboxUser(name: string | undefined, passwd = "/etc/passwd"): SandboxOptions["user"] {
+  if (!name) return undefined;
+  if (process.platform !== "linux") {
+    throw new Error(`SANDBOX_USER=${name} n'est utilisable que sous Linux`);
+  }
+  const line = readFileSync(passwd, "utf8")
+    .split("\n")
+    .find((l) => l.split(":")[0] === name);
+  if (!line) throw new Error(`Utilisateur du bac à sable introuvable : ${name}`);
+  const [, , uid, gid] = line.split(":");
+  const user = { uid: Number(uid), gid: Number(gid) };
+  if (!user.uid || !user.gid) throw new Error(`L'utilisateur du bac à sable ne doit pas être root : ${name}`);
+  if (process.getuid?.() !== 0) {
+    throw new Error("SANDBOX_USER exige un serveur lancé en root (changement d'utilisateur des enfants)");
+  }
+  if (process.getuid?.() === user.uid) throw new Error("Le bac à sable doit tourner sous un autre utilisateur que le serveur");
+  return user;
+}
 
 /** Environnement de l'enfant : vide (aucun secret, aucun NODE_OPTIONS). */
 export const EMPTY_ENV = {} as NodeJS.ProcessEnv;
@@ -97,6 +133,45 @@ export function sandboxNodeFlags(opts: Pick<SandboxOptions, "rootDir" | "jsHeapM
   ];
 }
 
+const NICE_BIN = "/usr/bin/nice";
+
+/**
+ * Lance un processus Node avec l'isolation du bac à sable : drapeaux de
+ * permission, env vide, utilisateur dédié, priorité minimale. Utilisé par
+ * le pool et par les tests (script hostile lancé exactement pareil).
+ */
+export function spawnSandboxProcess(
+  opts: Pick<SandboxOptions, "rootDir" | "jsHeapMb" | "user" | "priority">,
+  script: string,
+  args: string[],
+  { extraReadable = [], stdio = ["pipe", "pipe", "pipe"] }: { extraReadable?: string[]; stdio?: StdioOptions } = {},
+): ChildProcess {
+  const nodeArgs = [...sandboxNodeFlags(opts, extraReadable), script, ...args];
+  // Sous Linux, la priorité (nice) est propre à chaque thread et seul
+  // CAP_SYS_NICE permet de la changer sur le processus d'un autre
+  // utilisateur : on la fixe AVANT exec avec `nice`, pour que tous les
+  // threads de Node (dont la compilation WASM) en héritent.
+  const viaNice = process.platform === "linux" && existsSync(NICE_BIN);
+  const [command, argv] = viaNice ? [NICE_BIN, ["-n", String(opts.priority), process.execPath, ...nodeArgs]] : [process.execPath, nodeArgs];
+  const child = spawn(command, argv, {
+    env: EMPTY_ENV,
+    stdio,
+    windowsHide: true,
+    // Répertoire lisible par l'utilisateur du bac à sable.
+    cwd: path.dirname(sandboxPaths(opts.rootDir).childScript),
+    ...(opts.user ? { uid: opts.user.uid, gid: opts.user.gid } : {}),
+  });
+  // Windows (dev) : la priorité est celle du processus entier.
+  if (!viaNice && child.pid) {
+    try {
+      os.setPriority(child.pid, opts.priority);
+    } catch {
+      // Processus déjà terminé : rien à faire.
+    }
+  }
+  return child;
+}
+
 type Waiter = () => void;
 
 class SandboxChild {
@@ -112,11 +187,7 @@ class SandboxChild {
 
   constructor(private opts: SandboxOptions) {
     const p = sandboxPaths(opts.rootDir);
-    this.proc = spawn(
-      process.execPath,
-      [...sandboxNodeFlags(opts), p.childScript, p.pyodideDir, p.sqljsDir, String(opts.wasmMemoryBytes), String(opts.stdoutLimitBytes)],
-      { env: EMPTY_ENV, stdio: ["pipe", "pipe", "pipe"], windowsHide: true },
-    );
+    this.proc = spawnSandboxProcess(opts, p.childScript, [p.pyodideDir, p.sqljsDir, String(opts.wasmMemoryBytes), String(opts.stdoutLimitBytes)]);
 
     this.ready = new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -377,6 +448,6 @@ type GlobalWithSandbox = typeof globalThis & { [KEY]?: SandboxPool };
 /** Bac à sable partagé du processus (une seule instance Cloud Run). */
 export function getSandbox(): SandboxPool {
   const g = globalThis as GlobalWithSandbox;
-  g[KEY] ??= new SandboxPool();
+  g[KEY] ??= new SandboxPool({ user: resolveSandboxUser(process.env.SANDBOX_USER) });
   return g[KEY];
 }

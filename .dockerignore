@@ -1,0 +1,10 @@
+# Jamais dans l'image : secrets locaux, dépendances et artefacts de la machine.
+.env*
+!.env.example
+.git
+node_modules
+.next
+dist
+coverage
+*.tsbuildinfo
+next-env.d.ts

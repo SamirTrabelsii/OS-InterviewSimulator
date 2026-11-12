@@ -192,16 +192,49 @@ drapeaux, pas Python :
   entrées ; il renvoie les sorties en JSON et la comparaison se fait dans le
   parent. Un espace de noms Python neuf par cas de test ;
 - SQL : base générée pour chaque exécution, `PRAGMA query_only = 1`, une
-  seule instruction.
+  seule instruction ;
+- **utilisateur Linux dédié** (`SANDBOX_USER=bac`, créé dans l'image, sans
+  shell ni dossier personnel) : même si le modèle de permissions de Node
+  cédait, l'enfant ne peut ni lire `/proc/<serveur>/environ` ou sa mémoire,
+  ni envoyer un signal au serveur, ni écrire dans `/app` (testé dans le
+  conteneur, sans `--permission`). Changer d'utilisateur exige les droits
+  root : le serveur reste donc root dans le conteneur (voir ci-dessous) ;
+- **priorité CPU minimale** (`nice 19`, posé avant `exec` avec
+  `/usr/bin/nice` pour que tous les threads de Node en héritent ; Docker et
+  Cloud Run n'accordent pas `CAP_SYS_NICE`, et sous Linux la priorité est
+  propre à chaque thread) : le serveur web et Socket.IO passent d'abord.
+  Sous Windows (dev), priorité « basse » du processus ;
+- **moteurs chargés en local uniquement** : Pyodide 314.0.7 et sql.js
+  1.16.0 en versions exactes (empreintes `sha512` dans `package-lock.json`),
+  lus dans `node_modules`. Pyodide est configuré pour ne jamais retomber
+  sur son CDN (`packageBaseUrl`, `lockFileURL` et `packageCacheDir`
+  locaux) ; aucun paquet supplémentaire (`numpy`…) n'est disponible.
+  Le Pyodide côté navigateur (étape 7) devra être servi depuis
+  l'application, même version.
+
+**Serveur root, enfants « bac » (décision du 2026-11-12).** Seul un
+processus root (ou doté de `CAP_SETUID`) peut lancer un enfant sous un
+autre utilisateur. Alternatives écartées : `sudo -u bac` (le serveur ne
+pourrait plus tuer l'enfant avec `SIGKILL`, qui n'est pas relayé) ;
+capacités de fichier sur le binaire `node` (l'enfant, lui aussi `node`,
+en hériterait). Root dans le conteneur n'ouvre au serveur rien de plus que
+ce qu'il a déjà (les secrets sont dans son env) ; Cloud Run gen2 isole le
+conteneur dans une micro-VM. Si un audit l'exige : un petit superviseur
+root qui ne fait que lancer les enfants, et le serveur sous un utilisateur
+non privilégié.
 
 Un processus « chaud » (Pyodide déjà chargé, ~3–6 s) attend la tâche
 suivante ; chaque processus est **jeté après usage** et son remplaçant n'est
-préparé qu'après la fin de la tâche (sur 1 vCPU, un chargement en parallèle
+préparé qu'après la fin de la tâche (un chargement en parallèle
 ralentirait l'exécution chronométrée). Au plus **2 exécutions simultanées**,
 file de 8, au-delà réponse `busy`. Budget : Next ~300–400 Mo + 1 chaud
 ~150 Mo + 2 × (256 Mo + surcoût) ≈ 1,2 Go → instance Cloud Run à
-**2 Gio / 1 vCPU**. L'image Docker doit contenir `sandbox/child.mjs` et
-`node_modules/pyodide`, `node_modules/sql.js`.
+**2 Gio / 2 vCPU** (voir § 4). Le `Dockerfile` copie `sandbox/child.mjs`,
+`node_modules/pyodide` et `node_modules/sql.js`.
+
+Mesures (Docker Desktop, `node:26-bookworm-slim`) : chargement de Pyodide
+seul 4–6 s ; processus du bac à sable prêt en 8–15 s avec 1 vCPU, 8–11 s
+avec 2 vCPU. Piste d'amélioration : instantané mémoire de Pyodide.
 
 Le **SQL du candidat ne touche jamais PostgreSQL** : il est exécuté dans
 sql.js (SQLite WASM), dans le même bac à sable, sur une base générée
@@ -221,18 +254,23 @@ Alternatives écartées :
 
 1. **Une évasion Python → JS reste possible** (Pyodide n'est pas conçu
    comme un bac à sable). Le code évadé reste enfermé par le modèle de
-   permissions de Node ; une faille de ce modèle ou de V8 serait une
-   évasion complète (même utilisateur Linux que le serveur, pas
-   d'espace de noms ni de seccomp sur Cloud Run).
-2. **Neutralisation de `process.kill` non testée de bout en bout** : aucun
-   chemin d'évasion connu vers `process` une fois `Function` bloqué ; le
-   modèle de permissions ne couvre pas les signaux.
+   permissions de Node, puis par l'utilisateur `bac`. Une faille de V8
+   ou du noyau (élévation de privilèges) resterait une évasion complète :
+   pas d'espace de noms ni de seccomp sur Cloud Run. Le réseau ne dépend
+   que du modèle de permissions (Cloud Run ne filtre pas par processus) :
+   d'où le droit d'accès secret par secret et la rotation des secrets en
+   fin de campagne (DEPLOY.md).
+2. **Signal vers le serveur** : impossible sous Linux avec l'utilisateur
+   `bac` (testé : `EPERM`). En dev Windows (même utilisateur), seule la
+   neutralisation de `process.kill` protège, et aucun chemin d'évasion
+   connu vers `process` ne permet de la tester.
 3. **Plafond RSS sous Linux seulement** ; ailleurs (dev Windows) on compte
    sur les plafonds WASM et du tas JS.
 4. **Le code évadé pourrait contourner le plafond WASM** (il est posé en JS
    dans l'enfant) → reste le plafond RSS (Linux) et l'OOM du conteneur.
-5. **Partage du CPU** : sur 1 vCPU, une exécution lente d'un candidat
-   ralentit les autres et le serveur web pendant ≤ 10 s.
+5. **Partage du CPU** : les enfants sont en `nice 19`, mais les délais
+   sont mesurés en temps réel : un serveur très chargé peut faire échouer
+   une exécution par « temps dépassé ». 2 vCPU limitent ce risque.
 6. **Canal auxiliaire** : le code candidat voit les entrées cachées et peut
    en faire fuiter quelques bits par le motif réussite/échec ou la durée.
    Négligeable pour un entretien.
@@ -367,8 +405,14 @@ Interface `Assistant { ask(ctx, question): Promise<Answer> }` avec
 
 Conforme à CLAUDE.md, avec ces précisions :
 
-- Cloud Run : 1 vCPU, **2 Gio**, `min=0`, `max=1`, affinité de session,
+- Cloud Run : **2 vCPU** (bac à sable, voir DEPLOY.md § 4), **2 Gio**,
+  facturation CPU à l'instance, `min=0`, `max=1`, affinité de session,
   timeout 3600 s, concurrence 80.
+- Compte de service dédié : `roles/cloudsql.client` et
+  `roles/secretmanager.secretAccessor` **accordé secret par secret** sur
+  les seuls secrets `portail-*`, jamais au niveau du projet. **Rotation de
+  tous les secrets à la fin de chaque campagne** (procédure : DEPLOY.md
+  § 3), pour qu'un secret qui aurait fuité devienne inutile.
 - Démarrage à froid (~5–10 s) : le recruteur ouvre son tableau de bord
   quelques minutes avant le créneau, ce qui réveille l'instance.
 - Cloud SQL arrêté hors 8h–20h semaine : un entretien hors de cette plage
