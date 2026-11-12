@@ -22,6 +22,9 @@ export function pool(): Pool {
   return globalForDb.pgPool;
 }
 
+let cachedDb: ReturnType<typeof drizzle<typeof schema>> | undefined;
+
 export function db() {
-  return drizzle(pool(), { schema });
+  cachedDb ??= drizzle(pool(), { schema });
+  return cachedDb;
 }

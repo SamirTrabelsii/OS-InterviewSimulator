@@ -33,7 +33,7 @@ graines différentes → données différentes), validation Zod de tout
 `/content`, test `toPublic()` sans champ privé, **test canari** : après
 `next build`, aucun canari dans `.next/static`.
 
-### Étape 2 — Connexion recruteur et création de créneau
+### Étape 2 — Connexion recruteur et création de créneau ✅ (2026-11-12)
 - Auth.js Google, restriction de domaine (`hd` + callback `signIn`),
   règle indépendante du fournisseur (Entra ID ajouté plus tard).
 - Faux fournisseur « Connexion de test » en dev (`AUTH_DEV_LOGIN=true`).
