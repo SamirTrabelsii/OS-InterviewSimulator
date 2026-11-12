@@ -49,6 +49,11 @@ Même structure pour tous : quiz, SQL, algo, logique, binôme, rapport final.
   copilote = logs + contexte client). Le serveur n'envoie à chacun que
   sa vue.
 - Replays conservés 6 mois, annoncé au candidat avant le démarrage.
+- Quiz : une seule tentative, gemme acquise quel que soit le résultat
+  (correction visible du recruteur seulement). Logique : essais illimités,
+  5 s minimum entre deux essais (contrôlé côté serveur).
+- T0 d'un créneau = premier clic sur « Commencer » (pas avant l'heure
+  prévue) ; le second candidat du binôme partage ce T0.
 - Chaque action du candidat est journalisée (table events) pour le replay.
 - Aucun secret dans le code ni dans Git : .env.local en dev,
   Secret Manager en prod.
@@ -64,7 +69,10 @@ Même structure pour tous : quiz, SQL, algo, logique, binôme, rapport final.
 - docker compose up -d db (Postgres local) / npm run dev / npm test /
   npm run lint
 - Première fois : cp .env.example .env.local puis npm run db:migrate
-- Schéma modifié : npm run db:generate (migration dans /drizzle)
+- Schéma modifié : npm run db:generate (migration dans /drizzle), puis
+  npm run db:migrate et redémarrer npm run dev (sinon le serveur de dev
+  peut garder l'ancien schéma en mémoire). Si le serveur de dev recharge
+  la page en boucle, l'arrêter, supprimer .next/dev et le relancer.
 - Production locale : npm run build && npm start (dist/server.cjs)
 - npm run test:build : build + vérifie qu'aucun canari de solution
   n'atteint les fichiers envoyés au navigateur (à lancer avant chaque push)

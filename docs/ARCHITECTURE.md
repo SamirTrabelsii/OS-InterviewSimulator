@@ -197,7 +197,13 @@ T0 ─── Phase gemmes (individuelle, ≤ 33 min) ───┬── Portail 
                                                    au plus tard à T0+33 (décision du 2026-11-12)
 ```
 
-- Les deux candidats démarrent au même `T0` (créneau du binôme).
+- Les deux candidats démarrent au même `T0` (créneau du binôme) : `T0` est
+  fixé par le premier clic sur « Commencer », possible à partir de l'heure
+  prévue ; le second candidat partage ce `T0` (un retard se paie en temps).
+  Ouvrir le lien ne lance pas le chrono (un aperçu de lien dans Teams ne
+  doit rien déclencher).
+- Règles des gemmes (2026-11-12) : Quiz = une tentative, gemme acquise
+  quel que soit le résultat ; Logique = essais illimités, 5 s entre deux.
 - À `T0+33`, le Portail s'ouvre même s'il manque des gemmes ; les gemmes
   manquantes sont journalisées et visibles du recruteur, jamais du
   candidat. En solo, même règle avec un seul candidat.

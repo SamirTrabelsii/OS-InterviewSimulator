@@ -8,7 +8,7 @@ import { EventTracker } from "./EventTracker";
 import { StartButton } from "./StartButton";
 
 /** Épreuves jouables à ce stade de la roadmap (SQL : étape 6, Algo : étape 7). */
-const PLAYABLE = new Set<string>([]);
+const PLAYABLE = new Set<string>(["quiz", "logique"]);
 
 const GEM_STYLE: Record<string, string> = {
   quiz: "from-amber-400 to-orange-500",

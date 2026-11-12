@@ -56,7 +56,7 @@ session ; création de créneau manuelle OK en local.
 2ᵉ appareil journalisée, soumission après `deadline` refusée (horloge
 simulée), événements ordonnés par `seq`.
 
-### Étape 4 — Gemmes Quiz et Logique
+### Étape 4 — Gemmes Quiz et Logique ✅ (2026-11-12)
 - UI + validateurs serveur pour le quiz et l'énigme logique (valeurs
   issues de la graine).
 

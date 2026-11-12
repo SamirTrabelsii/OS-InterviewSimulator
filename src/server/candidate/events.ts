@@ -11,7 +11,14 @@ export type NewEvent = { type: string; payload?: Record<string, unknown> };
  * attribué par le serveur sous verrou (ligne de la session), donc sans
  * trou ni doublon même si plusieurs onglets écrivent en même temps.
  */
-export async function appendEvents(db: Db, sessionId: string, actor: Actor, events: NewEvent[]): Promise<number[]> {
+export async function appendEvents(
+  db: Db,
+  sessionId: string,
+  actor: Actor,
+  events: NewEvent[],
+  /** Heure serveur de l'action (par défaut : maintenant). Permet les tests à horloge simulée. */
+  at?: Date,
+): Promise<number[]> {
   if (events.length === 0) return [];
   return db.transaction(async (tx) => {
     await tx.execute(sql`select 1 from ${schema.sessions} where ${schema.sessions.id} = ${sessionId} for update`);
@@ -19,7 +26,14 @@ export async function appendEvents(db: Db, sessionId: string, actor: Actor, even
       .select({ max: sql<number>`coalesce(max(${schema.events.seq}), 0)::int` })
       .from(schema.events)
       .where(eq(schema.events.sessionId, sessionId));
-    const rows = events.map((e, i) => ({ sessionId, seq: max + i + 1, actor, type: e.type, payload: e.payload ?? {} }));
+    const rows = events.map((e, i) => ({
+      sessionId,
+      seq: max + i + 1,
+      actor,
+      type: e.type,
+      payload: e.payload ?? {},
+      ...(at ? { ts: at } : {}),
+    }));
     await tx.insert(schema.events).values(rows);
     return rows.map((r) => r.seq);
   });
@@ -37,6 +51,7 @@ export const CLIENT_EVENT_TYPES = [
   "focus.lost",
   "focus.gained",
   "code.snapshot",
+  "answer.change", // brouillon (choix modifié, saisie) : hésitations visibles au replay
   "client.error",
 ] as const;
 
