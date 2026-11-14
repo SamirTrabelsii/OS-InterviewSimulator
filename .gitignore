@@ -44,3 +44,6 @@ next-env.d.ts
 
 # moteurs navigateur copiés depuis node_modules (scripts/copy-vendor.mjs)
 /public/vendor/
+
+# réglages locaux de Claude Code
+/.claude/settings.local.json

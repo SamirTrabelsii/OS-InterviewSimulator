@@ -3,8 +3,10 @@ import { Suspense } from "react";
 import { requireRecruiter } from "@/server/auth/guard";
 import { listScenarios } from "@/server/content/registry";
 import { db } from "@/server/db/client";
+import { devShortcutsEnabled } from "@/server/dev/shortcuts";
 import { listSlots } from "@/server/slots/service";
 import { signOutRecruiter } from "./actions";
+import { DevOpenPortal } from "./DevOpenPortal";
 import { LocalDate } from "./LocalDate";
 import { RegenerateLink } from "./RegenerateLink";
 
@@ -59,6 +61,9 @@ async function Dashboard() {
                 <Link href={`/recruteur/creneaux/${s.id}/portail`} className="mt-1 inline-block text-sm underline">
                   Observer le Portail en direct
                 </Link>
+              )}
+              {devShortcutsEnabled() && s.mode === "binome" && s.status !== "termine" && s.status !== "annule" && (
+                <DevOpenPortal slotId={s.id} />
               )}
               <ul className="mt-2 space-y-1">
                 {s.candidates.map((c) => (

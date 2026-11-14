@@ -8,6 +8,7 @@ import { assertRecruiter } from "@/server/auth/guard";
 import { DEV_PROVIDER_ID } from "@/server/auth/policy";
 import { listScenarios } from "@/server/content/registry";
 import { db } from "@/server/db/client";
+import { DevShortcutError, devOpenPortal, devShortcutsEnabled } from "@/server/dev/shortcuts";
 import { SoloError, switchToSolo } from "@/server/portal/solo";
 import { candidateUrl, createSlot, createSlotInput, regenerateLink } from "@/server/slots/service";
 
@@ -78,4 +79,25 @@ export async function switchToSoloAction(slotId: string, keepSessionId: string):
   }
   revalidatePath("/recruteur");
   return { status: "ok" };
+}
+
+// ---------------------------------------------------------------- raccourci dev
+
+export type DevOpenState =
+  | { status: "error"; message: string }
+  | { status: "ok"; links: { name: string; url: string }[] };
+
+/** DEV UNIQUEMENT : ouvre le Portail d'un créneau sans jouer les 4 gemmes. */
+export async function devOpenPortalAction(slotId: string): Promise<DevOpenState> {
+  await assertRecruiter();
+  if (!devShortcutsEnabled()) return { status: "error", message: "Raccourci indisponible" };
+  try {
+    const links = await devOpenPortal(db(), z.uuid().parse(slotId), new Date());
+    const base = await baseUrl();
+    revalidatePath("/recruteur");
+    return { status: "ok", links: links.map((l) => ({ name: l.name, url: candidateUrl(base, l.token) })) };
+  } catch (err) {
+    if (err instanceof DevShortcutError) return { status: "error", message: err.message };
+    throw err;
+  }
 }
