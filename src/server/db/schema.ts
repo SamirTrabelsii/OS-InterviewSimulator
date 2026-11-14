@@ -75,6 +75,8 @@ export const portalRooms = pgTable("portal_rooms", {
     .primaryKey()
     .references(() => slots.id, { onDelete: "cascade" }),
   code: text("code").notNull().default(""),
+  // Change à chaque passage de main : un ancien pilote ne peut plus écrire.
+  epoch: integer("epoch").notNull().default(0),
   driverSessionId: uuid("driver_session_id").references(() => sessions.id, { onDelete: "set null" }),
   openedAt: timestamp("opened_at", { withTimezone: true }),
   solvedAt: timestamp("solved_at", { withTimezone: true }),

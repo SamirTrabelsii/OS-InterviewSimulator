@@ -116,7 +116,7 @@ d'exécution dépassé ». Le détail par test (erreur, durée) est journalisé
 pour le recruteur (`algo.result`). Parcours des 4 gemmes vérifié sur un
 build de production local.
 
-### Étape 8 — Portail en binôme
+### Étape 8 — Portail en binôme ✅ (2026-11-14)
 - Socket.IO dans `server.ts`, salle par créneau, authentification du
   socket par le cookie candidat.
 - Pilote / copilote à **vues asymétriques** (pilote : code ; copilote :
@@ -132,6 +132,25 @@ build de production local.
 Vitest : 2 clients, un seul peut écrire, passage de main, reconnexion
 qui retrouve le code, un socket sans cookie valide est refusé, un
 observateur ne peut pas écrire ; essai manuel à deux navigateurs.
+
+Réalisé : Socket.IO attaché à `server.ts` (`src/server/portal/hub.ts`,
+branché sur la base et le bac à sable par `boot.ts`). Règles pures dans
+`src/engine/portal.ts` (rôles, passage de main, vues). Authentification du
+socket par le cookie candidat ; observateur recruteur par jeton de 5 min
+émis par `/api/recruteur/creneaux/[id]/observer-token`. Sans `server-only`
+côté `server.ts` (`server-only-stub.ts`) et `destroyUpgrade: false` pour ne
+pas casser le rechargement à chaud de Next. Époque (`portal_rooms.epoch`) :
+un ancien pilote ne peut plus écrire après un passage de main. Le copilote
+peut prendre la main si le pilote est absent depuis 20 s ; une demande
+expire après 30 s ; 3 s minimum entre deux exécutions. Repli solo par le
+recruteur (`switchToSolo` : le partenaire retiré passe « expirée », le
+créneau devient solo). Logs du copilote : journal de 6 h généré par la
+graine + lignes des exemples publics à chaque exécution du pilote. Énigme
+commune dérivée de la graine de la 1re session du créneau. Vérifié : 21
+tests Socket.IO, validateur dans le bac à sable, essai de bout en bout sur
+build de production et en dev (pilote et copilote par socket, pilote dans
+le navigateur). Non fait : essai à deux navigateurs côte à côte (un seul
+navigateur disponible ici).
 
 ### Étape 9 — Replay et grille recruteur
 - Frise d'événements, Monaco en lecture seule, lecture/pause/vitesse.

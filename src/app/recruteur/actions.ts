@@ -8,6 +8,7 @@ import { assertRecruiter } from "@/server/auth/guard";
 import { DEV_PROVIDER_ID } from "@/server/auth/policy";
 import { listScenarios } from "@/server/content/registry";
 import { db } from "@/server/db/client";
+import { SoloError, switchToSolo } from "@/server/portal/solo";
 import { candidateUrl, createSlot, createSlotInput, regenerateLink } from "@/server/slots/service";
 
 async function baseUrl(): Promise<string> {
@@ -60,4 +61,21 @@ export async function regenerateLinkAction(sessionId: string): Promise<{ candida
   await assertRecruiter();
   const link = await regenerateLink(db(), z.uuid().parse(sessionId));
   return { candidateName: link.candidateName, url: candidateUrl(await baseUrl(), link.token) };
+}
+
+// ---------------------------------------------------------------- Portail
+
+export type SoloState = { status: "idle" } | { status: "error"; message: string } | { status: "ok" };
+
+/** Repli solo : garde un candidat, retire le partenaire absent (irréversible). */
+export async function switchToSoloAction(slotId: string, keepSessionId: string): Promise<SoloState> {
+  const recruiter = await assertRecruiter();
+  try {
+    await switchToSolo(db(), z.uuid().parse(slotId), z.uuid().parse(keepSessionId), recruiter.email, new Date());
+  } catch (err) {
+    if (err instanceof SoloError) return { status: "error", message: err.message };
+    throw err;
+  }
+  revalidatePath("/recruteur");
+  return { status: "ok" };
 }

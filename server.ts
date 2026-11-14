@@ -1,9 +1,12 @@
 // Point d'entrée du serveur : HTTP + Next.js.
-// Socket.IO viendra s'attacher à `httpServer` à l'étape 8 (voir docs/ROADMAP.md).
+// Socket.IO (salle du Portail en binôme) s'attache au même `httpServer`.
 // Ce fichier n'est pas compilé par Next : il est lancé par tsx en dev et
 // empaqueté par esbuild (dist/server.cjs) pour la production.
+// Doit rester le premier import : neutralise `server-only` pour ce processus.
+import "./src/server/portal/server-only-stub";
 import { createServer } from "node:http";
 import next from "next";
+import { startPortal } from "./src/server/portal/boot";
 import { getSandbox } from "./src/server/sandbox/pool";
 
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
@@ -15,6 +18,7 @@ async function main() {
   const app = next({ dev, hostname, port, httpServer });
   const handle = app.getRequestHandler();
   await app.prepare();
+  const portal = startPortal(httpServer);
 
   httpServer.on("request", (req, res) => {
     void handle(req, res);
@@ -29,6 +33,7 @@ async function main() {
   // Cloud Run envoie SIGTERM avant d'arrêter l'instance.
   const shutdown = () => {
     getSandbox().close();
+    void portal.close();
     httpServer.close(() => process.exit(0));
     setTimeout(() => process.exit(0), 10_000).unref();
   };

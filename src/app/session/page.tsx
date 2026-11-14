@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { GEM_IDS } from "@/engine/timeline";
 import { currentCandidate } from "@/server/candidate/current";
 import { loadPublicInstance } from "@/server/content/registry";
+import { AutoRefresh } from "./AutoRefresh";
 import { Countdown } from "./Countdown";
 import { EventTracker } from "./EventTracker";
 import { StartButton } from "./StartButton";
@@ -58,9 +59,11 @@ async function SessionScreen() {
     return (
       <section className="space-y-4 text-center">
         <EventTracker stage="fin" />
-        <h1 className="text-2xl font-semibold">Temps écoulé</h1>
+        <h1 className="text-2xl font-semibold">{view.retired ? "Session clôturée" : "Temps écoulé"}</h1>
         <p className="text-zinc-700 dark:text-zinc-300">
-          La session est terminée. Merci pour votre participation ! Le recruteur reviendra vers vous.
+          {view.retired
+            ? "Le recruteur a poursuivi l'épreuve sans vous. Merci pour votre participation !"
+            : "La session est terminée. Merci pour votre participation ! Le recruteur reviendra vers vous."}
         </p>
       </section>
     );
@@ -105,14 +108,15 @@ async function SessionScreen() {
         })}
       </ul>
 
-      <div className="rounded-xl border border-dashed border-indigo-400 p-4 text-center">
+      <Link href="/session/portail" className="block rounded-xl border border-dashed border-indigo-400 p-4 text-center hover:border-indigo-600">
         <p className="font-medium">{content.stages.portail.title}</p>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           {portalOpen
-            ? "Le Portail est ouvert. (Épreuve en binôme : étape 8 de la roadmap.)"
+            ? "Le Portail est ouvert : rejoignez votre binôme."
             : `Le Portail s'éveille… Il s'ouvrira dès que ${view.mode === "binome" ? "vous et votre binôme aurez" : "vous aurez"} les 4 gemmes, au plus tard à la 33ᵉ minute.`}
         </p>
-      </div>
+      </Link>
+      {!portalOpen && <AutoRefresh everyMs={10_000} />}
     </section>
   );
 }

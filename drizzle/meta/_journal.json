@@ -15,6 +15,13 @@
       "when": 1794445129050,
       "tag": "0001_slot_started_at",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794564202207,
+      "tag": "0002_great_chat",
+      "breakpoints": true
     }
   ]
 }

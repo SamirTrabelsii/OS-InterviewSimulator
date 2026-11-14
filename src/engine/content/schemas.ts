@@ -117,6 +117,9 @@ export const portailPublicSchema = z.strictObject({
   signature: pySignatureSchema,
   buggyCode: text,
   examples: z.array(pyTestSchema).min(1),
+  /** Vue du copilote : journal d'exécution initial (6 h du matin) et ticket du client. */
+  logs: z.array(text).min(1),
+  clientContext: text,
 });
 export const portailPrivateSchema = z.strictObject({
   canary: canarySchema,

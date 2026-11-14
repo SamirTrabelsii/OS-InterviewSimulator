@@ -55,6 +55,11 @@ async function Dashboard() {
                   {STATUS[s.status] ?? s.status}
                 </span>
               </div>
+              {s.status === "en_cours" && (
+                <Link href={`/recruteur/creneaux/${s.id}/portail`} className="mt-1 inline-block text-sm underline">
+                  Observer le Portail en direct
+                </Link>
+              )}
               <ul className="mt-2 space-y-1">
                 {s.candidates.map((c) => (
                   <li key={c.sessionId} className="flex flex-wrap items-center justify-between gap-2 text-sm">

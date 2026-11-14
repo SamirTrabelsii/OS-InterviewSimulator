@@ -1,0 +1,1 @@
+ALTER TABLE "portal_rooms" ADD COLUMN "epoch" integer DEFAULT 0 NOT NULL;

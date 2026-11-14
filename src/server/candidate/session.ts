@@ -90,6 +90,8 @@ export type CandidateView = {
   gems: string[];
   phase: Phase;
   canStartNow: boolean;
+  /** Retiré du binôme par le recruteur (repli solo) : sa session est close. */
+  retired: boolean;
 };
 
 export async function loadCandidateView(db: Db, sessionId: string, now: Date): Promise<CandidateView | null> {
@@ -105,7 +107,14 @@ export async function loadCandidateView(db: Db, sessionId: string, now: Date): P
   const partners = await db
     .select({ gems: schema.sessions.gems })
     .from(schema.sessions)
-    .where(and(eq(schema.sessions.slotId, slot.id), ne(schema.sessions.id, session.id)));
+    .where(
+      and(
+        eq(schema.sessions.slotId, slot.id),
+        ne(schema.sessions.id, session.id),
+        // Un partenaire retiré (repli solo) ne retient plus l'ouverture du Portail.
+        ne(schema.sessions.status, "expiree"),
+      ),
+    );
   const t0 = session.startedAt ? slot.startedAt : null;
 
   // Clôture paresseuse : la première lecture après la fin marque la session terminée.
@@ -131,7 +140,8 @@ export async function loadCandidateView(db: Db, sessionId: string, now: Date): P
     t0,
     deadline: session.deadline,
     gems: session.gems,
-    phase: phaseAt(t0, [session.gems, ...partners.map((p) => p.gems)], now),
+    phase: session.status === "expiree" ? "termine" : phaseAt(t0, [session.gems, ...partners.map((p) => p.gems)], now),
+    retired: session.status === "expiree",
     canStartNow: !session.startedAt && canStart(slot.scheduledAt, now) && (!slot.startedAt || now < deadlineFrom(slot.startedAt)),
   };
 }
