@@ -92,6 +92,8 @@ export type CandidateView = {
   canStartNow: boolean;
   /** Retiré du binôme par le recruteur (repli solo) : sa session est close. */
   retired: boolean;
+  /** Le Portail du créneau a été franchi (déjà montré au candidat dans l'écran du Portail). */
+  portalSolved: boolean;
 };
 
 export async function loadCandidateView(db: Db, sessionId: string, now: Date): Promise<CandidateView | null> {
@@ -130,6 +132,12 @@ export async function loadCandidateView(db: Db, sessionId: string, now: Date): P
     }
   }
 
+  const [room] = await db
+    .select({ solvedAt: schema.portalRooms.solvedAt })
+    .from(schema.portalRooms)
+    .where(eq(schema.portalRooms.slotId, slot.id))
+    .limit(1);
+
   return {
     sessionId: session.id,
     candidateName: session.candidateName,
@@ -142,6 +150,7 @@ export async function loadCandidateView(db: Db, sessionId: string, now: Date): P
     gems: session.gems,
     phase: session.status === "expiree" ? "termine" : phaseAt(t0, [session.gems, ...partners.map((p) => p.gems)], now),
     retired: session.status === "expiree",
+    portalSolved: room?.solvedAt != null,
     canStartNow: !session.startedAt && canStart(slot.scheduledAt, now) && (!slot.startedAt || now < deadlineFrom(slot.startedAt)),
   };
 }

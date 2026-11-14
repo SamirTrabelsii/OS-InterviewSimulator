@@ -71,7 +71,13 @@ async function Dashboard() {
                     <span>
                       {c.name} — {STATUS[c.status] ?? c.status} · {c.gems.length}/4 gemmes
                     </span>
-                    {c.status === "en_attente" && <RegenerateLink sessionId={c.sessionId} />}
+                    {c.status === "en_attente" ? (
+                      <RegenerateLink sessionId={c.sessionId} />
+                    ) : (
+                      <Link href={`/recruteur/sessions/${c.sessionId}`} className="underline">
+                        Replay et grille
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>

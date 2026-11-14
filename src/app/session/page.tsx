@@ -57,14 +57,39 @@ async function SessionScreen() {
 
   if (view.phase === "termine") {
     return (
-      <section className="space-y-4 text-center">
+      <section className="space-y-6">
         <EventTracker stage="fin" />
-        <h1 className="text-2xl font-semibold">{view.retired ? "Session clôturée" : "Temps écoulé"}</h1>
-        <p className="text-zinc-700 dark:text-zinc-300">
-          {view.retired
-            ? "Le recruteur a poursuivi l'épreuve sans vous. Merci pour votre participation !"
-            : "La session est terminée. Merci pour votre participation ! Le recruteur reviendra vers vous."}
-        </p>
+        <header className="space-y-1 text-center">
+          <p className="text-sm uppercase tracking-widest text-indigo-600 dark:text-indigo-400">{content.meta.company}</p>
+          <h1 className="text-2xl font-semibold">{view.retired ? "Session clôturée" : "Rapport de mission"}</h1>
+        </header>
+        {view.retired ? (
+          <p className="text-center text-zinc-700 dark:text-zinc-300">Le recruteur a poursuivi l&apos;épreuve sans vous. Merci pour votre participation !</p>
+        ) : (
+          <>
+            {view.portalSolved && <p className="text-lg leading-relaxed">{content.meta.epilogue}</p>}
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {GEM_IDS.map((gem) => {
+                const done = view.gems.includes(gem);
+                return (
+                  <li key={gem} className="flex items-center gap-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+                    <span aria-hidden className={`h-8 w-8 shrink-0 rotate-45 rounded-md bg-gradient-to-br ${GEM_STYLE[gem]} ${done ? "" : "opacity-25 grayscale"}`} />
+                    <span>
+                      <span className="block font-medium">{content.stages[gem].title}</span>
+                      <span className="block text-sm text-zinc-600 dark:text-zinc-400">{done ? "Gemme obtenue" : "Gemme non obtenue"}</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            {view.t0 && view.deadline && (
+              <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+                Durée de la session : {Math.round((Math.min(view.deadline.getTime(), now.getTime()) - view.t0.getTime()) / 60_000)} min sur 45.
+              </p>
+            )}
+            <p className="text-center text-zinc-700 dark:text-zinc-300">Merci pour votre participation ! Le recruteur reviendra vers vous.</p>
+          </>
+        )}
       </section>
     );
   }

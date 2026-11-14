@@ -152,7 +152,7 @@ build de production et en dev (pilote et copilote par socket, pilote dans
 le navigateur). Non fait : essai à deux navigateurs côte à côte (un seul
 navigateur disponible ici).
 
-### Étape 9 — Replay et grille recruteur
+### Étape 9 — Replay et grille recruteur ✅ (2026-11-14)
 - Frise d'événements, Monaco en lecture seule, lecture/pause/vitesse.
 - Grille de compétences + adéquation par profil (`evaluations`).
 - Rapport final du scénario côté candidat (sans note).
@@ -160,6 +160,21 @@ navigateur disponible ici).
 **Terminé quand** : test de reconstruction de l'état à un instant `t`
 depuis les événements ; test que les routes candidat ne renvoient
 jamais `evaluations` ; revue d'une session réelle de bout en bout.
+
+Réalisé : grille et profils convertis de `content/grille-et-profils.md`
+en TypeScript (`content/grille/`, schéma Zod dans `src/engine/grille/`),
+sans changer le sens. Adéquation pure (`src/engine/grille/adequation.ts` :
+« non observé » retiré du calcul, honnêteté sous 2 → « non retenu »).
+Replay pur (`src/engine/replay.ts` : `stateAt(events, t)` et `timeline`).
+`src/server/grading/evaluations.ts` : l'adéquation est recalculée côté
+serveur à l'enregistrement ; chaque recruteur ne relit que sa notation.
+Routes `/api/recruteur/sessions/[id]/{replay,evaluation}` (401 hors domaine)
+et page `/recruteur/sessions/[id]` (lien depuis le tableau de bord). Écran
+de fin candidat : gemmes, durée, épilogue si le Portail est franchi, aucune
+note. Test d'étanchéité : aucun fichier côté candidat ne référence
+`evaluations`, la grille ou l'adéquation. Pas de migration. Non fait : revue
+d'une vraie session à deux candidats, calibrage des poids (4 à 5 juniors),
+relecture RH de la grille.
 
 ### Étape 10 — Déploiement Google Cloud
 - `Dockerfile` multi-étapes, migrations au démarrage, `DEPLOY.md`

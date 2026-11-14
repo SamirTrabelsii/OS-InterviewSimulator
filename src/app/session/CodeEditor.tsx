@@ -15,7 +15,7 @@ type MonacoWindow = { require?: AmdRequire; monaco?: typeof Monaco };
 
 let loading: Promise<typeof Monaco> | null = null;
 
-function loadMonaco(): Promise<typeof Monaco> {
+export function loadMonaco(): Promise<typeof Monaco> {
   loading ??= new Promise((resolve, reject) => {
     const w = window as unknown as MonacoWindow;
     if (w.monaco) return resolve(w.monaco);
