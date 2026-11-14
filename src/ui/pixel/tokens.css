@@ -1,0 +1,65 @@
+/*
+ * Jetons visuels du côté candidat (pixel art nocturne).
+ * Tout est scopé sous .theme-night : le côté recruteur n'est pas touché.
+ * Source unique de la palette : les tests de contraste lisent ce fichier.
+ */
+.theme-night {
+  /* Fonds et surfaces (du plus sombre au plus clair) */
+  --c-bg-0: #07080f;
+  --c-bg-1: #0a0b16;
+  --c-bg-2: #10132a;
+  --c-surface-1: #151933;
+  --c-surface-2: #1a1d36;
+  --c-surface-3: #22274a;
+
+  /* Traits */
+  --c-line-1: #2c3160;
+  --c-line-2: #3a4170;
+  --c-line-3: #5a6196;
+
+  /* Textes */
+  --c-text: #e8e6ff;
+  --c-text-dim: #a7a3d1;
+  --c-text-mute: #9692c0;
+
+  /* Néons : clair / vif / sombre */
+  --c-cyan-l: #b8faff;
+  --c-cyan: #3ef0ff;
+  --c-cyan-d: #1f8e99;
+  --c-green: #4dffa6;
+  --c-green-d: #2e8f6a;
+  --c-magenta-l: #ffb8f0;
+  --c-magenta: #ff4fd8;
+  --c-magenta-d: #8a2a74;
+  --c-amber-l: #ffd27a;
+  --c-amber: #ffb547;
+  --c-amber-d: #8a5a1a;
+  --c-violet: #9b6bff;
+  --c-violet-d: #52388f;
+  --c-danger: #ff5c7a;
+
+  /* Grille pixel : 1 pixel d'écran = --ps pixels CSS, toujours entier */
+  --ps: 2;
+  --px: calc(var(--ps) * 1px);
+
+  /* Polices (variables posées par NightShell) */
+  --f-pixel: var(--font-pixel), monospace;
+  --f-ui: var(--font-ui), sans-serif;
+  --f-read: var(--font-read), system-ui, sans-serif;
+  --f-code: var(--font-code), ui-monospace, monospace;
+
+  /* Durée d'un palier d'animation (pas de courbes douces) */
+  --t-step: 120ms;
+}
+
+/* Échelle entière : 2 par défaut, 1 sur petits écrans, 3 sur grands. */
+@media (max-width: 480px) {
+  .theme-night {
+    --ps: 1;
+  }
+}
+@media (min-width: 1600px) {
+  .theme-night {
+    --ps: 3;
+  }
+}

@@ -1,0 +1,296 @@
+/* Composants pixel du côté candidat. Voir tokens.css pour les variables. */
+
+.theme-night {
+  background: var(--c-bg-1);
+  color: var(--c-text);
+  font-family: var(--f-ui);
+  min-height: 100vh;
+}
+.theme-night * {
+  box-sizing: border-box;
+}
+
+/* Textes à lire (énoncés) et code : jamais en police pixel. */
+.px-read {
+  font-family: var(--f-read);
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--c-text);
+}
+.px-code {
+  font-family: var(--f-code);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--c-text);
+}
+.px-title {
+  font-family: var(--f-pixel);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Image pixel : jamais lissée. */
+.px-sprite {
+  image-rendering: pixelated;
+  display: inline-block;
+  flex: none;
+}
+
+/*
+ * Bord à coins coupés : 4 ombres pleines décalées d'un pixel (haut, bas,
+ * gauche, droite) dessinent un contour sans les coins.
+ */
+.px-edge {
+  --edge: var(--c-line-2);
+  --glow-ring: 0 0 0 0 transparent;
+  box-shadow:
+    calc(var(--px) * -1) 0 0 0 var(--edge),
+    var(--px) 0 0 0 var(--edge),
+    0 calc(var(--px) * -1) 0 0 var(--edge),
+    0 var(--px) 0 0 var(--edge),
+    var(--glow-ring);
+}
+
+/* Lumière par paliers : 1, 2 ou 3 anneaux à angles vifs (pas de flou). */
+.px-glow-1 {
+  --glow-ring: 0 0 0 calc(var(--px) * 2) color-mix(in srgb, var(--glow, var(--c-cyan)) 30%, transparent);
+}
+.px-glow-2 {
+  --glow-ring:
+    0 0 0 calc(var(--px) * 2) color-mix(in srgb, var(--glow, var(--c-cyan)) 35%, transparent),
+    0 0 0 calc(var(--px) * 4) color-mix(in srgb, var(--glow, var(--c-cyan)) 18%, transparent);
+}
+.px-glow-3 {
+  --glow-ring:
+    0 0 0 calc(var(--px) * 2) color-mix(in srgb, var(--glow, var(--c-cyan)) 45%, transparent),
+    0 0 0 calc(var(--px) * 4) color-mix(in srgb, var(--glow, var(--c-cyan)) 28%, transparent),
+    0 0 0 calc(var(--px) * 6) color-mix(in srgb, var(--glow, var(--c-cyan)) 14%, transparent);
+}
+.px-tone-cyan { --glow: var(--c-cyan); --edge: var(--c-cyan-d); }
+.px-tone-green { --glow: var(--c-green); --edge: var(--c-green-d); }
+.px-tone-magenta { --glow: var(--c-magenta); --edge: var(--c-magenta-d); }
+.px-tone-amber { --glow: var(--c-amber); --edge: var(--c-amber-d); }
+.px-tone-violet { --glow: var(--c-violet); --edge: var(--c-violet-d); }
+
+/* Panneau */
+.px-panel {
+  background: var(--c-surface-1);
+  padding: calc(var(--px) * 6);
+  margin: calc(var(--px) * 6);
+  position: relative;
+}
+.px-panel-title {
+  font-family: var(--f-pixel);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-dim);
+  margin: 0 0 calc(var(--px) * 4);
+}
+
+/* Boutons */
+.px-btn {
+  --btn-bg: var(--c-surface-3);
+  --btn-fg: var(--c-text);
+  --btn-lip: var(--c-bg-0);
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--f-pixel);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  min-height: calc(var(--px) * 18);
+  padding: calc(var(--px) * 5) calc(var(--px) * 8);
+  margin: var(--px) var(--px) calc(var(--px) * 4);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--px) * 3);
+  /* lèvre basse de 3 pixels + contour à coins coupés */
+  box-shadow:
+    calc(var(--px) * -1) 0 0 0 var(--btn-lip),
+    var(--px) 0 0 0 var(--btn-lip),
+    0 calc(var(--px) * -1) 0 0 var(--btn-lip),
+    0 calc(var(--px) * 3) 0 0 var(--btn-lip);
+  transition: transform var(--t-step) steps(2);
+}
+.px-btn:hover:not(:disabled) {
+  --btn-bg: var(--c-line-2);
+  transform: translateY(calc(var(--px) * -1));
+}
+.px-btn:active:not(:disabled) {
+  transform: translateY(calc(var(--px) * 2));
+  box-shadow:
+    calc(var(--px) * -1) 0 0 0 var(--btn-lip),
+    var(--px) 0 0 0 var(--btn-lip),
+    0 calc(var(--px) * -1) 0 0 var(--btn-lip),
+    0 var(--px) 0 0 var(--btn-lip);
+}
+.px-btn:focus-visible,
+.px-drawer-close:focus-visible {
+  outline: calc(var(--px) * 2) solid var(--c-amber);
+  outline-offset: calc(var(--px) * 2);
+}
+.px-btn:disabled {
+  cursor: not-allowed;
+  --btn-bg: var(--c-surface-2);
+  --btn-fg: var(--c-text-mute);
+}
+.px-btn-primary {
+  --btn-bg: var(--c-cyan);
+  --btn-fg: var(--c-bg-0);
+  --btn-lip: var(--c-cyan-d);
+}
+.px-btn-primary:hover:not(:disabled) {
+  --btn-bg: var(--c-cyan-l);
+}
+.px-btn-primary:disabled {
+  --btn-bg: var(--c-cyan-d);
+  --btn-fg: var(--c-bg-2);
+}
+.px-btn-ghost {
+  --btn-bg: transparent;
+  --btn-fg: var(--c-text-dim);
+  --btn-lip: transparent;
+  box-shadow: none;
+}
+.px-btn-ghost:hover:not(:disabled) {
+  --btn-bg: var(--c-surface-2);
+  --btn-fg: var(--c-text);
+}
+
+/* Barre à segments */
+.px-bar {
+  display: flex;
+  gap: var(--px);
+  padding: var(--px);
+  background: var(--c-bg-0);
+  margin: var(--px);
+}
+.px-bar-seg {
+  flex: 1;
+  height: calc(var(--px) * 6);
+  background: var(--c-surface-2);
+}
+.px-bar-seg[data-on="true"] {
+  background: var(--seg, var(--c-cyan));
+}
+.px-bar-cyan { --seg: var(--c-cyan); }
+.px-bar-green { --seg: var(--c-green); }
+.px-bar-magenta { --seg: var(--c-magenta); }
+.px-bar-amber { --seg: var(--c-amber); }
+
+/* HUD : chrono, gemmes, Bip */
+.px-hud {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 8);
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.px-hud-time {
+  font-family: var(--f-pixel);
+  font-size: 1.5rem;
+  letter-spacing: 0.08em;
+  color: var(--c-text);
+  font-variant-numeric: tabular-nums;
+}
+.px-hud-time[data-urgent="true"] {
+  color: var(--c-amber);
+}
+.px-hud-gems {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.px-gem[data-lit="true"] {
+  animation: px-gem-pulse 1.6s steps(2) infinite;
+}
+
+/* Tiroir */
+.px-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(100%, calc(var(--px) * 160));
+  background: var(--c-surface-1);
+  box-shadow:
+    calc(var(--px) * -2) 0 0 0 var(--c-line-2),
+    calc(var(--px) * -6) 0 0 0 var(--c-bg-0);
+  padding: calc(var(--px) * 8);
+  overflow-y: auto;
+  transform: translateX(100%);
+  visibility: hidden;
+  transition:
+    transform var(--t-step) steps(3),
+    visibility 0s linear var(--t-step);
+  z-index: 40;
+}
+.px-drawer[data-open="true"] {
+  transform: none;
+  visibility: visible;
+  transition-delay: 0s;
+}
+.px-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: calc(var(--px) * 6);
+}
+.px-drawer-close {
+  all: unset;
+  cursor: pointer;
+  font-family: var(--f-pixel);
+  padding: calc(var(--px) * 3);
+  color: var(--c-text-dim);
+}
+.px-drawer-close:hover {
+  color: var(--c-text);
+}
+
+/* Cadre à échelle entière (aperçu du futur monde) */
+.px-frame {
+  position: relative;
+  overflow: hidden;
+  background: var(--c-bg-0);
+  margin: 0 auto;
+}
+
+/* Animations discrètes, par paliers */
+@keyframes px-gem-pulse {
+  0% { filter: none; }
+  50% { filter: brightness(1.25); }
+}
+@keyframes px-neon-flicker {
+  0%, 92%, 96% { opacity: 1; }
+  94% { opacity: 0.55; }
+  97% { opacity: 0.7; }
+  98% { opacity: 1; }
+}
+.px-flicker {
+  animation: px-neon-flicker 4s steps(1) infinite;
+}
+
+/* Animations réduites : préférence système OU interrupteur [data-motion="reduced"]. */
+@media (prefers-reduced-motion: reduce) {
+  .theme-night *,
+  .theme-night *::before,
+  .theme-night *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+[data-motion="reduced"] *,
+[data-motion="reduced"] *::before,
+[data-motion="reduced"] *::after {
+  animation: none !important;
+  transition: none !important;
+}

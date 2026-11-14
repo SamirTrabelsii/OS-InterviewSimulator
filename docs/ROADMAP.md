@@ -176,6 +176,46 @@ note. Test d'étanchéité : aucun fichier côté candidat ne référence
 d'une vraie session à deux candidats, calibrage des poids (4 à 5 juniors),
 relecture RH de la grille.
 
+### Étape 9b — Interface candidat (pixel art)
+Côté candidat uniquement ; le côté recruteur reste sobre et professionnel.
+Références : `design/` (`reference-style.png`, maquettes hub et SQL).
+
+Direction :
+- **Plus simple** : une action par écran, HUD réduit (chrono, gemmes, Bip),
+  un seul bouton principal par épreuve, Bip et indices dans un tiroir
+  repliable.
+- **Pixel art avancé** : monde vu de dessus, nuit, néons sombres,
+  résolution pixel fixe agrandie en nombres entiers, palette limitée,
+  lumières par paliers, petites animations discrètes (désactivées si
+  l'utilisateur réduit les animations).
+- **Lisibilité** : énoncés et code dans une police très lisible.
+- **Graphismes remplaçables** : fichiers dans un dossier de sprites, pour
+  passer plus tard à un pack acheté ou à un illustrateur.
+
+Parties (une à la fois, arrêt et revue entre chaque) :
+1. **Socle visuel** ✅ (2026-11-15) — palette, polices, grille pixel,
+   composants (panneaux, boutons, barres, HUD), page de démonstration
+   réservée au dev.
+   Réalisé : `src/ui/pixel/` (jetons `tokens.css` scopés sous `.theme-night`,
+   `pixel.css`, composants, tiroir, cadre à échelle entière, catalogue
+   `sprites.ts` → `public/sprites/`, substituts générés par
+   `scripts/make-sprites.mjs`), polices via `next/font` (Silkscreen,
+   Pixelify Sans, Atkinson Hyperlegible pour les énoncés, JetBrains Mono
+   pour le code), démo sur `/dev/ui` (404 en production). Aucun écran
+   existant modifié ; `NightShell` n'est pas encore appliqué au parcours
+   candidat (partie 2 et 3). Tests : échelle entière, contrastes AA de la
+   palette, existence des sprites, page dev désactivée en production.
+2. **Monde du hub** — quartier vu de dessus, bâtiments des 4 gemmes,
+   Portail, personnage, déplacement, sprites remplaçables.
+3. **Épreuves et Portail** — quiz, SQL, algo, logique et binôme habillés
+   avec les composants ; tiroir Bip/indices ; un bouton principal.
+4. **Accueil et finitions** — accueil, fin, états d'erreur, animations,
+   réduction des animations, passe d'accessibilité et de performance.
+
+**Terminé quand** : aucun changement de logique serveur ; `npm test`,
+`npm run lint`, `npm run test:build` passent ; parcours complet candidat
+revu au clavier et avec « réduire les animations ».
+
 ### Étape 10 — Déploiement Google Cloud
 - `Dockerfile` multi-étapes, migrations au démarrage, `DEPLOY.md`
   (création des ressources, Secret Manager, compte de service,
