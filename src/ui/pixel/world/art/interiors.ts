@@ -1,16 +1,18 @@
 import type { Col } from "./palette";
+import { getArt } from "./index";
 import { Pix, rng } from "./pix";
+import { makeSkyline } from "./skyline";
 
 /**
- * Décors d'intérieur des épreuves : un tableau fixe de 320 × 180 par bâtiment
+ * Décors d'intérieur des épreuves (et l'extérieur nocturne des pages hors épreuve) : un tableau fixe de 320 × 180 par bâtiment
  * (Savoir, Archives, Calcul, Intuition) et un pour le Portail. Même palette
  * que le quartier. Volontairement sombres et rangés sur les bords : la
  * zone de travail (énoncé, éditeur) reste posée dessus, sur des surfaces unies.
  */
 export const IW = 320;
 export const IH = 180;
-export type InteriorId = "savoir" | "archives" | "calcul" | "intuition" | "portail";
-export const INTERIOR_IDS: InteriorId[] = ["savoir", "archives", "calcul", "intuition", "portail"];
+export type InteriorId = "savoir" | "archives" | "calcul" | "intuition" | "portail" | "quartier";
+export const INTERIOR_IDS: InteriorId[] = ["savoir", "archives", "calcul", "intuition", "portail", "quartier"];
 
 const FLOOR_Y = 138;
 
@@ -182,7 +184,22 @@ function portail(p: Pix): void {
   for (let x = 20; x < IW; x += 36) p.vline(x, 9, 6, "v1").set(x, 15, "v3");
 }
 
-const DRAW: Record<InteriorId, (p: Pix) => void> = { savoir, archives, calcul, intuition, portail };
+/** Le quartier vu de la rue, de nuit : ciel, lune, toits, rue mouillée et deux lampadaires (accueil, fin, erreurs). */
+function quartier(p: Pix): void {
+  p.blit(makeSkyline(IW, 100), 0, 0);
+  p.rect(0, 100, IW, IH - 100, "n2").hline(0, 100, IW, "i2").rect(0, 101, IW, 3, "i1").hline(0, 104, IW, "n3");
+  p.dither(0, 105, IW, 20, "n1", 5);
+  for (let y = 124; y < IH; y += 12) for (let x = ((y / 12) % 2) * 20; x < IW; x += 40) p.hline(x, y, 20, "n3");
+  p.dither(0, 140, IW, 40, "ink", 4);
+  const lamp = getArt().props.lamp;
+  for (const x of [28, 276]) {
+    p.dither(x - 12, 62, 40, 42, "amD", 1);
+    p.blit(lamp, x, 56);
+    p.ellipse(x + 8, 110, 12, 2.5, "amD");
+  }
+}
+
+const DRAW: Record<InteriorId, (p: Pix) => void> = { savoir, archives, calcul, intuition, portail, quartier };
 const cache = new Map<InteriorId, Pix>();
 
 /** Décor d'un bâtiment (ou du Portail), généré une seule fois. */

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { PixelPanel } from "@/ui/pixel/components";
+import { Backdrop } from "@/ui/pixel/world/Backdrop";
 import { NightShell } from "@/ui/pixel/NightShell";
 import { LocalDateTime } from "../session/LocalTime";
 
@@ -28,6 +29,7 @@ async function Message({ searchParams }: { searchParams: Promise<{ raison?: stri
 export default function LienInvalidePage({ searchParams }: PageProps<"/lien-invalide">) {
   return (
     <NightShell className="px-fill">
+      <Backdrop id="quartier" />
       <main className="px-center">
         <PixelPanel tone="violet" glow={1} title="Le Portail reste fermé">
           <Suspense>

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { RULES, STAGE_KIND } from "@/engine/stages";
 import { GEM_IDS, type GemId } from "@/engine/timeline";
 import { GemIcon, PixelPanel } from "@/ui/pixel/components";
+import { Backdrop } from "@/ui/pixel/world/Backdrop";
 import { WorldPreview } from "@/ui/pixel/world/WorldPreview";
 import { LocalTime } from "./LocalTime";
 
@@ -27,6 +28,7 @@ export function WelcomeScreen({
 }) {
   return (
     <main className="px-center">
+      <Backdrop id="quartier" />
       <p className="px-eyebrow">{company}</p>
       <h1 className="px-hero-title">{title}</h1>
       <WorldPreview done={[]} label="Le quartier du Portail, de nuit : quatre bâtiments et le Portail fermé au centre" />
@@ -128,6 +130,7 @@ export function ReportScreen({
 }) {
   return (
     <main className="px-center">
+      <Backdrop id="quartier" />
       <p className="px-eyebrow">{company}</p>
       <h1 className="px-hero-title">{retired ? "Session clôturée" : "Rapport de mission"}</h1>
       {retired ? (

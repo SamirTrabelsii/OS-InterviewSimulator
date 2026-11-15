@@ -577,7 +577,8 @@
   image-rendering: pixelated;
 }
 .px-stage,
-.px-stack {
+.px-stack,
+.px-center {
   position: relative;
   z-index: 1;
 }
