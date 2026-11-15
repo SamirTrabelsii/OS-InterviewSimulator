@@ -44,29 +44,30 @@ describe("monde du hub : géométrie", () => {
     }
   });
   it("on ne marche ni dans un bâtiment, ni hors du monde, ni dans le Portail", () => {
-    expect(isWalkable({ x: 44, y: 60 })).toBe(false); // dans le Savoir
-    expect(isWalkable({ x: -5, y: 90 })).toBe(false);
-    expect(isWalkable({ x: 160, y: 205 })).toBe(false);
-    expect(isWalkable({ x: 160, y: 158 })).toBe(false); // base du Portail
-    expect(isWalkable({ x: 20, y: 150 })).toBe(false); // hors de la place
+    expect(isWalkable({ x: 64, y: 100 })).toBe(false); // dans le Savoir
+    expect(isWalkable({ x: -5, y: 190 })).toBe(false);
+    expect(isWalkable({ x: 200, y: 330 })).toBe(false); // sous le monde
+    expect(isWalkable({ x: 186, y: 294 })).toBe(false); // pilier gauche du Portail
+    expect(isWalkable({ x: 208, y: 292 })).toBe(true); // l'ouverture du Portail se franchit
+    expect(isWalkable({ x: 112, y: 148 })).toBe(false); // pied d'un lampadaire
   });
 });
 
 describe("monde du hub : déplacement", () => {
   it("avance, glisse le long d'un obstacle et ne le traverse pas", () => {
-    // Contre le mur des bâtiments (y = 80) : on monte, on glisse vers la droite.
-    let p: Vec = { x: 40, y: 83 };
+    // Contre le mur des bâtiments (y = 136) : on monte, on glisse vers la droite.
+    let p: Vec = { x: 40, y: 139 };
     for (let i = 0; i < 60; i++) p = stepPlayer(p, 1, -1, 16);
     expect(p.x).toBeGreaterThan(40);
     expect(isWalkable(p)).toBe(true);
-    expect(p.y).toBeGreaterThanOrEqual(82);
+    expect(p.y).toBeGreaterThanOrEqual(138);
   });
   it("un très long dt ne téléporte pas", () => {
-    const p = stepPlayer({ x: 100, y: 95 }, 1, 0, 60_000);
-    expect(p.x - 100).toBeLessThanOrEqual(6);
+    const p = stepPlayer({ x: 140, y: 200 }, 1, 0, 60_000);
+    expect(p.x - 140).toBeLessThanOrEqual(6);
   });
   it("sans intention, ne bouge pas", () => {
-    const p: Vec = { x: 100, y: 95 };
+    const p: Vec = { x: 140, y: 200 };
     expect(stepPlayer(p, 0, 0, 16)).toBe(p);
   });
   it("la direction suit l'axe dominant", () => {
@@ -92,17 +93,18 @@ describe("monde du hub : proximité et chemins", () => {
       expect(Math.hypot(end.x - TARGETS[id].x, end.y - TARGETS[id].y)).toBeLessThan(1);
     }
   });
-  it("contourne le Portail depuis le nord de la place vers sa face sud", () => {
-    const path = findPath({ x: 160, y: 110 }, TARGETS.portail)!;
-    expect(path.length).toBeGreaterThan(1);
-    for (const q of walk({ x: 160, y: 110 }, path)) expect(isWalkable(q)).toBe(true);
+  it("de la rue jusqu'à l'ouverture du Portail, sans traverser un pilier", () => {
+    const from = { x: 60, y: 200 };
+    const path = findPath(from, TARGETS.portail)!;
+    expect(path.length).toBeGreaterThan(0);
+    for (const q of walk(from, path)) expect(isWalkable(q)).toBe(true);
   });
   it("de porte en porte, sans traverser les bâtiments", () => {
     const path = findPath(TARGETS.quiz, TARGETS.logique)!;
     for (const q of walk(TARGETS.quiz, path)) expect(isWalkable(q)).toBe(true);
   });
   it("ramène une destination non praticable à la zone la plus proche", () => {
-    const path = findPath(START, { x: 44, y: 50 })!; // dans un bâtiment
+    const path = findPath(START, { x: 64, y: 60 })!; // dans un bâtiment
     expect(path).not.toBeNull();
     expect(isWalkable(path[path.length - 1])).toBe(true);
   });
@@ -112,28 +114,21 @@ describe("monde du hub : proximité et chemins", () => {
 });
 
 describe("monde du hub : décor", () => {
-  const SIZE: Record<string, [number, number]> = {
-    "prop-crate": [12, 10],
-    "prop-vending": [12, 18],
-    "prop-bench": [24, 10],
-    "prop-plant": [10, 14],
-    "prop-dumpster": [20, 12],
-  };
   it("les accessoires tiennent dans le monde", () => {
     for (const p of PROPS) {
-      const [w, h] = SIZE[p.sprite];
       expect(p.x, p.sprite).toBeGreaterThanOrEqual(0);
-      expect(p.y, p.sprite).toBeGreaterThanOrEqual(0);
-      expect(p.x + w, p.sprite).toBeLessThanOrEqual(WORLD_W);
-      expect(p.y + h, p.sprite).toBeLessThanOrEqual(WORLD_H);
+      expect(p.x + p.w, p.sprite).toBeLessThanOrEqual(WORLD_W);
+      expect(p.base, p.sprite).toBeLessThanOrEqual(WORLD_H);
     }
   });
-  it("aucun accessoire ne recouvre une zone praticable (la rue, la place)", () => {
-    for (const p of PROPS) {
-      const [w, h] = SIZE[p.sprite];
-      for (const [dx, dy] of [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1], [w / 2, h / 2]]) {
-        expect(isWalkable({ x: p.x + dx, y: p.y + dy }), `${p.sprite} ${p.x},${p.y}`).toBe(false);
-      }
+  it("chaque accessoire plein bloque son pied, et aucun ne bloque une porte ni le Portail", () => {
+    for (const p of PROPS.filter((q) => q.solid)) {
+      expect(isWalkable({ x: p.x + p.w / 2, y: p.base - 3 }), `${p.sprite} ${p.x},${p.base}`).toBe(false);
     }
+    for (const id of TARGET_IDS) expect(isWalkable(TARGETS[id]), id).toBe(true);
+  });
+  it("les quatre bâtiments reposent sur la façade (pied à y = 128) au-dessus de la zone praticable", () => {
+    for (const b of BUILDINGS) expect(b.rect.y + b.rect.h).toBe(128);
+    expect(isWalkable({ x: 64, y: 130 })).toBe(false);
   });
 });

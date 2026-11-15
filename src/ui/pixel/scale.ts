@@ -1,6 +1,6 @@
-import { WORLD_H, WORLD_W } from "@/engine/hub/world";
-
-export { WORLD_H, WORLD_W };
+/** Résolution logique des écrans candidat (cadre pixel) : 320 × 200. Le monde du hub a la sienne (src/engine/hub/world.ts). */
+export const WORLD_W = 320;
+export const WORLD_H = 200;
 
 /**
  * Plus grand facteur ENTIER qui fait tenir la résolution logique dans la

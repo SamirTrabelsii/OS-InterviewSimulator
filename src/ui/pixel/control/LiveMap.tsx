@@ -5,8 +5,7 @@ import type { MapSpot } from "@/engine/recruteur/live";
 import { START, TARGETS, WORLD_H, WORLD_W } from "@/engine/hub/world";
 import { PixelAvatar } from "./Avatar";
 import { integerScale } from "../scale";
-import { loadAtlas } from "../world/atlas";
-import { buildStatic, drawFrame } from "../world/scene";
+import { createDistrict } from "../world/art/district";
 
 export type MapPin = { sessionId: string; name: string; spot: MapSpot | null };
 type Gem = "quiz" | "sql" | "algo" | "logique";
@@ -26,7 +25,7 @@ export function LiveMap({ pins, done, portalOpen, label }: { pins: MapPin[]; don
   useEffect(() => {
     const el = host.current;
     if (!el) return;
-    const measure = () => setScale(Math.min(2, integerScale(el.clientWidth, WORLD_H * 2)));
+    const measure = () => setScale(Math.min(2, integerScale(el.clientWidth, WORLD_H * 2, WORLD_W, WORLD_H)));
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
@@ -34,24 +33,21 @@ export function LiveMap({ pins, done, portalOpen, label }: { pins: MapPin[]; don
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    void loadAtlas().then((atlas) => {
-      const g = canvas.current?.getContext("2d");
-      if (cancelled || !g) return;
-      const set = new Set(doneKey ? doneKey.split(",") : []);
-      drawFrame(g, atlas, buildStatic(atlas), {
-        t: 0,
-        reduced: true,
-        player: { x: -64, y: -64 }, // pas de personnage : ce sont les pastilles qui montrent les candidats
-        facing: "down",
-        moving: false,
-        done: { quiz: set.has("quiz"), sql: set.has("sql"), algo: set.has("algo"), logique: set.has("logique") },
-        portalOpen,
-      });
+    const g = canvas.current?.getContext("2d");
+    if (!g) return;
+    const set = new Set(doneKey ? doneKey.split(",") : []);
+    const scene = createDistrict();
+    scene.state.px = -64; // pas de personnage : ce sont les pastilles qui montrent les candidats
+    scene.state.py = -64;
+    scene.state.portal = portalOpen ? "open" : "closed";
+    scene.render(g, 0, {
+      rain: false,
+      lights: true,
+      reduced: true,
+      details: false,
+      bip: false,
+      done: { quiz: set.has("quiz"), sql: set.has("sql"), algo: set.has("algo"), logique: set.has("logique") },
     });
-    return () => {
-      cancelled = true;
-    };
   }, [doneKey, portalOpen, scale]);
 
   // Plusieurs candidats au même endroit : on les décale côte à côte.

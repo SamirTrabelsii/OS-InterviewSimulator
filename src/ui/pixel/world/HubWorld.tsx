@@ -21,8 +21,7 @@ import {
 } from "@/engine/hub/world";
 import { PixelButton } from "../components";
 import { integerScale } from "../scale";
-import { loadAtlas, type Atlas } from "./atlas";
-import { buildStatic, drawFrame } from "./scene";
+import { createDistrict } from "./art/district";
 
 export interface HubStage {
   gem: "quiz" | "sql" | "algo" | "logique";
@@ -144,7 +143,7 @@ export function HubWorld({ stages, portal, idleHint, onEnter, reducedMotion }: H
     const el = host.current;
     if (!el) return;
     const measure = () => {
-      const s = integerScale(el.clientWidth, window.innerHeight - 230);
+      const s = integerScale(el.clientWidth, window.innerHeight - 230, WORLD_W, WORLD_H);
       setScale(s);
     };
     measure();
@@ -159,7 +158,6 @@ export function HubWorld({ stages, portal, idleHint, onEnter, reducedMotion }: H
 
   // Boucle de rendu et de mouvement.
   useEffect(() => {
-    let cancelled = false;
     let raf = 0;
     try {
       const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "null") as Vec | null;
@@ -168,11 +166,10 @@ export function HubWorld({ stages, portal, idleHint, onEnter, reducedMotion }: H
       /* position non restaurée */
     }
 
-    void loadAtlas().then((atlas: Atlas) => {
-      if (cancelled) return;
+    {
       const g = canvas.current?.getContext("2d");
       if (!g) return;
-      const statics = buildStatic(atlas);
+      const scene = createDistrict();
       let last = performance.now();
       let lastDraw = -Infinity;
 
@@ -235,8 +232,8 @@ export function HubWorld({ stages, portal, idleHint, onEnter, reducedMotion }: H
           setNear(nn);
         }
 
-        // Au repos, les animations avancent par paliers de 90 ms ou plus : 10 images/s suffisent.
-        if (!w.moving && now - lastDraw < 100) {
+        // Animations réduites : image fixe, redessinée seulement au besoin. Sinon ~30 images/s (lumières et pluie).
+        if (now - lastDraw < (L.reduced ? (w.moving ? 16 : 100) : 33)) {
           raf = requestAnimationFrame(tick);
           return;
         }
@@ -244,22 +241,20 @@ export function HubWorld({ stages, portal, idleHint, onEnter, reducedMotion }: H
 
         const done = { quiz: false, sql: false, algo: false, logique: false };
         for (const s of L.stages) done[s.gem] = s.done;
-        drawFrame(g, atlas, statics, {
-          t: now,
-          reduced: L.reduced,
-          player: w.pos,
-          facing: w.facing,
-          moving: w.moving,
-          done,
-          portalOpen: L.portal.open,
-        });
+        const st = scene.state;
+        st.px = w.pos.x;
+        st.py = w.pos.y;
+        st.dir = w.facing;
+        st.moving = w.moving;
+        st.walkT = now / 1000;
+        st.portal = L.portal.open ? "open" : "closed";
+        scene.render(g, L.reduced ? 0 : now / 1000, { rain: true, lights: true, reduced: L.reduced, details: !L.reduced, done, bip: false });
         raf = requestAnimationFrame(tick);
       };
       raf = requestAnimationFrame(tick);
-    });
+    }
 
     return () => {
-      cancelled = true;
       cancelAnimationFrame(raf);
     };
   }, [enter, enterable]);
@@ -332,19 +327,11 @@ export function HubWorld({ stages, portal, idleHint, onEnter, reducedMotion }: H
           const box = { left: b.rect.x * scale, top: b.rect.y * scale, width: b.rect.w * scale, height: b.rect.h * scale };
           return (
             <div key={b.gem}>
-              <span
-                className={`px-sign px-tone-${b.tone} ${done || reduced ? "" : "px-flicker"}`}
-                data-done={done}
-                style={{ left: (b.rect.x + 4) * scale, top: (b.rect.y + 8) * scale, width: 56 * scale, height: 9 * scale }}
-                aria-hidden
-              >
-                {b.sign}
-              </span>
               {st?.subtitle && (
                 <span
                   className="px-bldg-cap"
                   data-done={done}
-                  style={{ left: b.rect.x * scale, top: (b.rect.y + b.rect.h) * scale, width: b.rect.w * scale }}
+                  style={{ left: b.rect.x * scale, top: (b.rect.y + b.rect.h + 2) * scale, width: b.rect.w * scale }}
                   aria-hidden
                 >
                   {st.subtitle}

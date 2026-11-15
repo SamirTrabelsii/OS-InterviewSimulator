@@ -1,10 +1,11 @@
 // Monde du hub (étape 9b, partie 2) : géométrie, collisions et chemins.
-// Fonctions pures, en pixels logiques d'un monde de 320 × 200 (voir
-// src/ui/pixel/scale.ts). Aucune dépendance au navigateur : testable seule.
+// Fonctions pures, en pixels logiques d'un monde de 416 × 320 (26 × 20 tuiles
+// de 16 px). Aucune dépendance au navigateur : testable seule. Les graphismes
+// (src/ui/pixel/world/art) lisent ces positions, jamais l'inverse.
 
-export const WORLD_W = 320;
-export const WORLD_H = 200;
-export const TILE = 8;
+export const WORLD_W = 416;
+export const WORLD_H = 320;
+export const TILE = 16;
 
 export interface Vec {
   x: number;
@@ -19,69 +20,113 @@ export interface Rect {
 
 export type TargetId = "quiz" | "sql" | "algo" | "logique" | "portail";
 export type Tone = "cyan" | "green" | "magenta" | "amber";
+export type BuildingKey = "savoir" | "archives" | "calcul" | "intuition";
 
 export interface Building {
   gem: Exclude<TargetId, "portail">;
   /** Nom court de l'enseigne (identique pour tous les scénarios). */
   sign: string;
   tone: Tone;
-  /** Fichier de sprite (clé de l'atlas). */
-  sprite: "building-savoir" | "building-archives" | "building-calcul" | "building-intuition";
+  /** Quel bâtiment dessiner. */
+  art: BuildingKey;
+  /** Emprise du sprite : toit compris. Le bas (y + h) est le pied de la façade. */
   rect: Rect;
 }
 
-const BW = 64;
-const BH = 48;
-const BY = 32;
+const BW = 80;
+const BH = 112;
+const BY = 16;
 
 export const BUILDINGS: readonly Building[] = [
-  { gem: "quiz", sign: "SAVOIR", tone: "cyan", sprite: "building-savoir", rect: { x: 12, y: BY, w: BW, h: BH } },
-  { gem: "sql", sign: "ARCHIVES", tone: "green", sprite: "building-archives", rect: { x: 92, y: BY, w: BW, h: BH } },
-  { gem: "algo", sign: "CALCUL", tone: "magenta", sprite: "building-calcul", rect: { x: 172, y: BY, w: BW, h: BH } },
-  { gem: "logique", sign: "INTUITION", tone: "amber", sprite: "building-intuition", rect: { x: 252, y: BY, w: BW, h: BH } },
+  { gem: "quiz", sign: "SAVOIR", tone: "cyan", art: "savoir", rect: { x: 24, y: BY, w: BW, h: BH } },
+  { gem: "sql", sign: "ARCHIVES", tone: "green", art: "archives", rect: { x: 120, y: BY, w: BW, h: BH } },
+  { gem: "algo", sign: "CALCUL", tone: "magenta", art: "calcul", rect: { x: 216, y: BY, w: BW, h: BH } },
+  { gem: "logique", sign: "INTUITION", tone: "amber", art: "intuition", rect: { x: 312, y: BY, w: BW, h: BH } },
 ];
 
-/** Le Portail : sprite 48 × 48 au centre de la place ; seul le bas est un obstacle. */
-export const PORTAL_RECT: Rect = { x: 136, y: 116, w: 48, h: 48 };
-const PORTAL_SOLID: Rect = { x: 140, y: 152, w: 40, h: 12 };
-
-/** Zones praticables : la rue (toute la largeur) et la place carrelée. */
-const STREET: Rect = { x: 0, y: 80, w: WORLD_W, h: 24 };
-const PLAZA: Rect = { x: 96, y: 104, w: 128, h: 96 };
-const WALKABLE: readonly Rect[] = [STREET, PLAZA];
-const SOLIDS: readonly Rect[] = [PORTAL_SOLID];
-
-export type PropName = "prop-crate" | "prop-vending" | "prop-bench" | "prop-plant" | "prop-dumpster";
-
-/** Décor non praticable des zones hors place (positions du coin haut-gauche). `glow` : lumière du néon. */
-export const PROPS: ReadonlyArray<{ sprite: PropName; x: number; y: number; glow?: { color: string; r: number } }> = [
-  { sprite: "prop-vending", x: 14, y: 118, glow: { color: "#ff4fd8", r: 16 } },
-  { sprite: "prop-plant", x: 34, y: 124 },
-  { sprite: "prop-crate", x: 14, y: 160 },
-  { sprite: "prop-crate", x: 27, y: 166 },
-  { sprite: "prop-dumpster", x: 56, y: 150 },
-  { sprite: "prop-bench", x: 28, y: 184 },
-  { sprite: "prop-plant", x: 74, y: 172 },
-  { sprite: "prop-vending", x: 294, y: 118, glow: { color: "#3ef0ff", r: 16 } },
-  { sprite: "prop-bench", x: 244, y: 122 },
-  { sprite: "prop-plant", x: 270, y: 130 },
-  { sprite: "prop-dumpster", x: 250, y: 160 },
-  { sprite: "prop-crate", x: 284, y: 166 },
-  { sprite: "prop-crate", x: 272, y: 174 },
-  { sprite: "prop-plant", x: 232, y: 180 },
+/** Le Portail : sprite 64 × 88 au centre de la place ; seuls ses deux piliers sont des obstacles. */
+export const PORTAL_RECT: Rect = { x: 176, y: 220, w: 64, h: 88 };
+const PORTAL_SOLIDS: Rect[] = [
+  { x: PORTAL_RECT.x + 5, y: PORTAL_RECT.y + 64, w: 11, h: 20 },
+  { x: PORTAL_RECT.x + 48, y: PORTAL_RECT.y + 64, w: 11, h: 20 },
 ];
 
-/** Points où l'on « entre » : devant chaque porte, et devant le Portail. */
+/** Tout ce qui est au sud de la façade (trottoir, rue, place) se parcourt, sauf les obstacles. */
+const GROUND: Rect = { x: 6, y: 136, w: WORLD_W - 12, h: WORLD_H - 3 - 136 };
+const WALKABLE: readonly Rect[] = [GROUND];
+
+export type PropName =
+  | "lamp"
+  | "bench"
+  | "vending-mg"
+  | "vending-cy"
+  | "plant"
+  | "crate"
+  | "crate-stack"
+  | "dumpster"
+  | "bin"
+  | "bollard"
+  | "hydrant"
+  | "cabinet"
+  | "neon-board";
+
+export interface Prop {
+  sprite: PropName;
+  /** Bord gauche et largeur du sprite. */
+  x: number;
+  w: number;
+  /** Bas du sprite (pied de l'objet) : sert au tri en profondeur et à l'obstacle. */
+  base: number;
+  /** Lueur de néon. */
+  glow?: { color: "mgL" | "cyL"; r: number; k: number };
+  /** Bloque le passage (5 pixels de profondeur au pied de l'objet). */
+  solid?: boolean;
+}
+
+export const PROPS: readonly Prop[] = [
+  { sprite: "lamp", x: 104, w: 16, base: 152, solid: true },
+  { sprite: "lamp", x: 200, w: 16, base: 152, solid: true },
+  { sprite: "lamp", x: 296, w: 16, base: 152, solid: true },
+  { sprite: "lamp", x: 62, w: 16, base: 300, solid: true },
+  { sprite: "lamp", x: 338, w: 16, base: 300, solid: true },
+  { sprite: "vending-mg", x: 3, w: 16, base: 146, glow: { color: "mgL", r: 24, k: 0.5 }, solid: true },
+  { sprite: "vending-cy", x: 397, w: 16, base: 146, glow: { color: "cyL", r: 24, k: 0.5 }, solid: true },
+  { sprite: "vending-cy", x: 372, w: 16, base: 270, glow: { color: "cyL", r: 24, k: 0.5 }, solid: true },
+  { sprite: "bench", x: 26, w: 32, base: 148, solid: true },
+  { sprite: "bench", x: 100, w: 32, base: 268, solid: true },
+  { sprite: "bench", x: 284, w: 32, base: 268, solid: true },
+  { sprite: "plant", x: 84, w: 16, base: 146, solid: true },
+  { sprite: "plant", x: 372, w: 16, base: 146, solid: true },
+  { sprite: "plant", x: 118, w: 16, base: 304, solid: true },
+  { sprite: "plant", x: 282, w: 16, base: 304, solid: true },
+  { sprite: "bin", x: 152, w: 12, base: 150, solid: true },
+  { sprite: "cabinet", x: 272, w: 14, base: 148, solid: true },
+  { sprite: "hydrant", x: 224, w: 10, base: 154, solid: true },
+  { sprite: "bollard", x: 172, w: 8, base: 158, solid: true },
+  { sprite: "bollard", x: 248, w: 8, base: 158, solid: true },
+  { sprite: "crate-stack", x: 104, w: 16, base: 126 },
+  { sprite: "crate", x: 296, w: 16, base: 124 },
+  { sprite: "neon-board", x: 22, w: 45, base: 262, glow: { color: "mgL", r: 34, k: 0.45 }, solid: true },
+  { sprite: "dumpster", x: 356, w: 32, base: 314, solid: true },
+  { sprite: "crate-stack", x: 332, w: 16, base: 316, solid: true },
+];
+
+const SOLIDS: readonly Rect[] = [
+  ...PORTAL_SOLIDS,
+  ...PROPS.filter((p) => p.solid).map((p) => ({ x: p.x, y: p.base - 5, w: p.w, h: 5 })),
+];
+
+/** Points où l'on « entre » : devant chaque porte, et dans l'ouverture du Portail. */
 export const TARGETS: Readonly<Record<TargetId, Vec>> = {
-  quiz: { x: 12 + 32, y: 86 },
-  sql: { x: 92 + 32, y: 86 },
-  algo: { x: 172 + 32, y: 86 },
-  logique: { x: 252 + 32, y: 86 },
-  portail: { x: 160, y: 172 },
+  quiz: { x: 24 + 40, y: 140 },
+  sql: { x: 120 + 40, y: 140 },
+  algo: { x: 216 + 40, y: 140 },
+  logique: { x: 312 + 40, y: 140 },
+  portail: { x: 208, y: 292 },
 };
 export const TARGET_IDS = Object.keys(TARGETS) as TargetId[];
 
-export const START: Vec = { x: 160, y: 96 };
+export const START: Vec = { x: 150, y: 246 };
 
 /** Pieds du personnage : boîte de 6 × 4 pixels centrée sur (x, y). */
 const FOOT_HW = 3;
