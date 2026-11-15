@@ -5,8 +5,8 @@ import { IH, IW, makeInterior, type InteriorId } from "./art/interiors";
 
 /**
  * Décor d'intérieur fixe derrière une épreuve ou le Portail : une image de
- * 320 × 180 agrandie d'un facteur ENTIER qui couvre la fenêtre (rognée
- * au centre), sans animation ni interaction. Purement décoratif (aria-hidden) ;
+ * 320 × 180 agrandie d'un facteur ENTIER qui couvre la largeur (ancrée en bas, rognée sur les côtés ;
+ * le mur continue vers le haut), sans animation ni interaction. Purement décoratif (aria-hidden) ;
  * le contenu se pose par-dessus sur des surfaces unies.
  */
 export function Backdrop({ id }: { id: InteriorId }) {
@@ -14,7 +14,7 @@ export function Backdrop({ id }: { id: InteriorId }) {
   const [scale, setScale] = useState(0);
 
   useEffect(() => {
-    const measure = () => setScale(Math.max(1, Math.ceil(Math.max(window.innerWidth / IW, window.innerHeight / IH))));
+    const measure = () => setScale(Math.max(1, Math.ceil(window.innerWidth / IW)));
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);

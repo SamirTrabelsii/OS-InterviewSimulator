@@ -9,17 +9,17 @@ export default function SessionError({ reset }: { error: Error & { digest?: stri
     <>
       <Backdrop id="quartier" />
       <main className="px-center">
-      <PixelPanel tone="amber" glow={1} title="! Un incident est survenu">
-        <p className="px-read px-story">Votre travail déjà validé est enregistré et le chrono continue. Réessayez, ou revenez au quartier.</p>
-        <div className="px-actions">
-          <PixelButton variant="primary" onClick={reset}>
-            Réessayer
-          </PixelButton>
-          <PixelLink href="/session" variant="ghost">
-            Retour au quartier
-          </PixelLink>
-        </div>
-      </PixelPanel>
+        <PixelPanel tone="amber" glow={1} title="! Un incident est survenu">
+          <p className="px-read px-story">Votre travail déjà validé est enregistré et le chrono continue. Réessayez, ou revenez au quartier.</p>
+          <div className="px-actions">
+            <PixelButton variant="primary" onClick={reset}>
+              Réessayer
+            </PixelButton>
+            <PixelLink href="/session" variant="ghost">
+              Retour au quartier
+            </PixelLink>
+          </div>
+        </PixelPanel>
       </main>
     </>
   );

@@ -568,9 +568,20 @@
   overflow: hidden;
   pointer-events: none;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
+  background: var(--c-bg-2);
+}
+.px-backdrop[data-interior="quartier"] {
+  background: var(--c-bg-0);
+}
+/* Voile sombre : le décor reste une ambiance, jamais un fond qui concurrence les textes posés dessus. */
+.px-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
   background: var(--c-bg-1);
+  opacity: 0.55;
 }
 .px-backdrop canvas {
   flex: none;
