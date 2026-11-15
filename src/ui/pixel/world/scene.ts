@@ -1,4 +1,4 @@
-import { BUILDINGS, PORTAL_RECT, TILE, WORLD_H, WORLD_W, type Facing, type TargetId, type Vec } from "@/engine/hub/world";
+import { BUILDINGS, PORTAL_RECT, PROPS, TILE, WORLD_H, WORLD_W, type Facing, type TargetId, type Vec } from "@/engine/hub/world";
 import type { Atlas } from "./atlas";
 
 type GemKey = Exclude<TargetId, "portail">;
@@ -79,6 +79,7 @@ export function buildStatic(atlas: Atlas): HTMLCanvasElement {
 
   for (const b of BUILDINGS) g.drawImage(atlas[b.sprite], b.rect.x, b.rect.y);
   for (const x of LAMPS) g.drawImage(atlas.lamp, x - 4, 56);
+  for (const p of PROPS) g.drawImage(atlas[p.sprite], p.x, p.y);
 
   // Flaques de néon sur la chaussée.
   const puddles: Array<[number, number, number, number, string, number]> = [
@@ -172,6 +173,7 @@ export function drawFrame(g: CanvasRenderingContext2D, atlas: Atlas, statics: HT
     light(g, cx, b.rect.y + b.rect.h + 2, open ? 15 : 9, TONE_COLOR[b.gem], open ? 0.05 : 0.03);
     if (s.done[b.gem]) light(g, cx, b.rect.y - 8, 12, TONE_COLOR[b.gem], 0.04);
   }
+  for (const p of PROPS) if (p.glow) light(g, p.x + 6, p.y + 8, p.glow.r, p.glow.color, 0.04);
   const flick = s.portalOpen && !s.reduced && Math.floor(s.t / 200) % 2 === 1 ? 0.01 : 0;
   light(g, PORTAL_RECT.x + 24, PORTAL_RECT.y + 30, s.portalOpen ? 36 : 22, s.portalOpen ? "#3ef0ff" : "#9b6bff", (s.portalOpen ? 0.05 : 0.025) + flick);
   g.globalCompositeOperation = "source-over";

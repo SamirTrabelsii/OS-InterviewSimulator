@@ -235,8 +235,25 @@ Parties (une à la fois, arrêt et revue entre chaque) :
    l'étape 12 n'existent pas (le bouton n'apparaît que s'il y a quelque
    chose à ouvrir). Côté recruteur : rien de changé (`CodeEditor` garde son
    thème clair/sombre hors `night`).
-4. **Accueil et finitions** — accueil, fin, états d'erreur, animations,
-   réduction des animations, passe d'accessibilité et de performance.
+4. **Accueil et finitions** ✅ (2026-11-15) — accueil, fin, états d'erreur,
+   animations, réduction des animations, passe d'accessibilité et de
+   performance.
+   Réalisé : layout `/session` en thème nuit (`NightShell` une seule fois,
+   `error.tsx` calme avec « Réessayer »), écrans `WelcomeScreen` et
+   `ReportScreen` (`Screens.tsx`) : accueil avec aperçu du quartier
+   (`WorldPreview`, image fixe réutilisant le rendu du hub), règles, avis
+   d'enregistrement de 6 mois conservé, un seul bouton « Commencer » ;
+   rapport de fin avec le Portail ouvert ou fermé, gemmes, durée, jamais de
+   note ; page d'accueil publique, `/lien-invalide` et « pas de session »
+   habillés. Monde : 5 accessoires de décor (sprites remplaçables, positions
+   dans `PROPS`, testées hors zones praticables), néons des distributeurs.
+   Performance : au repos le canvas se redessine à 10 images/s (60 en
+   déplacement) ; rien ne tourne onglet masqué (`requestAnimationFrame`).
+   Accessibilité : titre caché `h1` sur le hub, libellés des zones
+   cliquables, aperçus en `role="img"`, focus visibles, contrastes AA testés ;
+   animations réduites (système ou interrupteur de la démo) : pas de
+   clignotement, gemmes immobiles, trajets instantanés. Démos : `/dev/ui`,
+   `/dev/hub`, `/dev/screens` (404 en production).
 
 **Terminé quand** : aucun changement de logique serveur ; `npm test`,
 `npm run lint`, `npm run test:build` passent ; parcours complet candidat

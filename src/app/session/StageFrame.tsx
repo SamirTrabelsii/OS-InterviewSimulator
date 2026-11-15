@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useState, type ReactNode } from "react";
 import { Hud, PixelLink, PixelPanel, type GemId, type Tone } from "@/ui/pixel/components";
 import { Drawer } from "@/ui/pixel/Drawer";
-import { NightShell } from "@/ui/pixel/NightShell";
 import { Countdown } from "./Countdown";
 import { EventTracker } from "./EventTracker";
 
@@ -44,7 +43,7 @@ export function StageFrame({
   const tone = TONE[gem];
 
   return (
-    <NightShell>
+    <>
       <div className={`px-stage ${wide ? "px-stage-wide" : ""}`}>
         <EventTracker stage={gem} />
         <Hud
@@ -81,6 +80,6 @@ export function StageFrame({
           </Drawer>
         )}
       </div>
-    </NightShell>
+    </>
   );
 }

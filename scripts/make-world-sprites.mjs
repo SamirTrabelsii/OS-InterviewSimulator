@@ -229,4 +229,47 @@ function walker(dir, step) {
   });
   save("player", sheet);
 }
+// ── Accessoires de décor (zones hors place) ────────────────
+{
+  const crate = new Img(12, 10);
+  crate.rect(0, 0, 12, 10, "#3a2a55");
+  crate.frame(0, 0, 12, 10, "#1a1630");
+  crate.rect(1, 4, 10, 1, "#52388f");
+  crate.rect(5, 1, 2, 8, "#52388f");
+  save("prop-crate", crate);
+
+  const vend = new Img(12, 18);
+  vend.rect(0, 0, 12, 18, "#1a1d36");
+  vend.frame(0, 0, 12, 18, "#2c3160");
+  vend.rect(2, 2, 8, 8, "#0b0c18");
+  for (const [x, y, c] of [[3, 3, "#ff4fd8"], [6, 3, "#3ef0ff"], [3, 6, "#ffb547"], [6, 6, "#4dffa6"], [8, 4, "#ffd27a"]]) vend.rect(x, y, 2, 2, c);
+  vend.rect(2, 12, 8, 3, "#07080f");
+  vend.rect(3, 16, 6, 1, "#10132a");
+  save("prop-vending", vend);
+
+  const bench = new Img(24, 10);
+  bench.rect(1, 0, 22, 4, "#3a4170");
+  bench.rect(1, 0, 22, 1, "#5a6196");
+  bench.rect(0, 5, 24, 2, "#262b52");
+  bench.rect(2, 7, 2, 3, "#151933");
+  bench.rect(20, 7, 2, 3, "#151933");
+  save("prop-bench", bench);
+
+  const plant = new Img(10, 14);
+  plant.rect(2, 9, 6, 5, "#3a2a55");
+  plant.rect(2, 9, 6, 1, "#52388f");
+  for (const [x, y] of [[4, 0], [3, 2], [5, 2], [2, 4], [6, 4], [3, 5], [5, 5], [4, 6], [3, 7], [5, 7]]) plant.rect(x, y, 2, 2, "#2e8f6a");
+  plant.rect(4, 3, 2, 3, "#4dffa6");
+  save("prop-plant", plant);
+
+  const dump = new Img(20, 12);
+  dump.rect(0, 2, 20, 10, "#22274a");
+  dump.rect(0, 0, 20, 3, "#3a4170");
+  dump.rect(0, 0, 20, 1, "#5a6196");
+  dump.rect(0, 6, 20, 1, "#151933");
+  dump.rect(3, 4, 2, 1, "#4dffa6");
+  dump.rect(1, 11, 3, 1, "#07080f");
+  dump.rect(16, 11, 3, 1, "#07080f");
+  save("prop-dumpster", dump);
+}
 console.log("sprites du monde écrits dans", OUT);

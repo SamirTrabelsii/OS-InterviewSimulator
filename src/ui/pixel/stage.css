@@ -341,3 +341,60 @@
 .px-rules li + li {
   margin-top: calc(var(--px) * 3);
 }
+
+/* Écrans plein cadre : accueil, fin, erreurs */
+.px-fill {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.px-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(var(--px) * 4);
+  flex: 1;
+  width: 100%;
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: calc(var(--px) * 6);
+}
+.px-eyebrow {
+  font-family: var(--f-pixel);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--c-cyan);
+  margin: 0;
+}
+.px-hero-title {
+  font-family: var(--f-pixel);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  line-height: 1.2;
+  margin: 0;
+  color: var(--c-text);
+}
+.px-gemrow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: calc(var(--px) * 3);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+.px-gemrow li {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 4);
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
+  margin: var(--px);
+  background: var(--c-surface-2);
+  font-family: var(--f-read);
+  box-shadow: 0 0 0 var(--px) var(--c-line-1);
+}
+.px-gemrow small {
+  display: block;
+  color: var(--c-text-dim);
+}

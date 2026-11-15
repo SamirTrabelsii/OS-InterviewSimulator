@@ -51,6 +51,26 @@ const PLAZA: Rect = { x: 96, y: 104, w: 128, h: 96 };
 const WALKABLE: readonly Rect[] = [STREET, PLAZA];
 const SOLIDS: readonly Rect[] = [PORTAL_SOLID];
 
+export type PropName = "prop-crate" | "prop-vending" | "prop-bench" | "prop-plant" | "prop-dumpster";
+
+/** Décor non praticable des zones hors place (positions du coin haut-gauche). `glow` : lumière du néon. */
+export const PROPS: ReadonlyArray<{ sprite: PropName; x: number; y: number; glow?: { color: string; r: number } }> = [
+  { sprite: "prop-vending", x: 14, y: 118, glow: { color: "#ff4fd8", r: 16 } },
+  { sprite: "prop-plant", x: 34, y: 124 },
+  { sprite: "prop-crate", x: 14, y: 160 },
+  { sprite: "prop-crate", x: 27, y: 166 },
+  { sprite: "prop-dumpster", x: 56, y: 150 },
+  { sprite: "prop-bench", x: 28, y: 184 },
+  { sprite: "prop-plant", x: 74, y: 172 },
+  { sprite: "prop-vending", x: 294, y: 118, glow: { color: "#3ef0ff", r: 16 } },
+  { sprite: "prop-bench", x: 244, y: 122 },
+  { sprite: "prop-plant", x: 270, y: 130 },
+  { sprite: "prop-dumpster", x: 250, y: 160 },
+  { sprite: "prop-crate", x: 284, y: 166 },
+  { sprite: "prop-crate", x: 272, y: 174 },
+  { sprite: "prop-plant", x: 232, y: 180 },
+];
+
 /** Points où l'on « entre » : devant chaque porte, et devant le Portail. */
 export const TARGETS: Readonly<Record<TargetId, Vec>> = {
   quiz: { x: 12 + 32, y: 86 },

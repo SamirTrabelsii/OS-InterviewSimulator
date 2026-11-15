@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+import { PixelPanel } from "@/ui/pixel/components";
+import { NightShell } from "@/ui/pixel/NightShell";
 
 const MESSAGES: Record<string, string> = {
   invalide: "Ce lien n'est pas valide. Vérifiez que vous avez copié le lien complet, ou demandez-en un nouveau au recruteur.",
@@ -9,16 +11,19 @@ const MESSAGES: Record<string, string> = {
 
 async function Message({ searchParams }: { searchParams: Promise<{ raison?: string }> }) {
   const { raison } = await searchParams;
-  return <p className="text-zinc-700 dark:text-zinc-300">{MESSAGES[raison ?? ""] ?? MESSAGES.invalide}</p>;
+  return <p className="px-read px-story">{MESSAGES[raison ?? ""] ?? MESSAGES.invalide}</p>;
 }
 
 export default function LienInvalidePage({ searchParams }: PageProps<"/lien-invalide">) {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-4 p-6 text-center">
-      <h1 className="text-2xl font-semibold">Le Portail reste fermé</h1>
-      <Suspense>
-        <Message searchParams={searchParams as Promise<{ raison?: string }>} />
-      </Suspense>
-    </main>
+    <NightShell className="px-fill">
+      <main className="px-center">
+        <PixelPanel tone="violet" glow={1} title="Le Portail reste fermé">
+          <Suspense>
+            <Message searchParams={searchParams as Promise<{ raison?: string }>} />
+          </Suspense>
+        </PixelPanel>
+      </main>
+    </NightShell>
   );
 }

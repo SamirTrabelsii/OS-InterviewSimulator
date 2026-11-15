@@ -166,6 +166,7 @@ export function HubWorld({ stages, portal, onEnter, reducedMotion }: HubWorldPro
       if (!g) return;
       const statics = buildStatic(atlas);
       let last = performance.now();
+      let lastDraw = -Infinity;
 
       const tick = (now: number) => {
         const dt = now - last;
@@ -225,6 +226,13 @@ export function HubWorld({ stages, portal, onEnter, reducedMotion }: HubWorldPro
           L.near = nn;
           setNear(nn);
         }
+
+        // Au repos, les animations avancent par paliers de 90 ms ou plus : 10 images/s suffisent.
+        if (!w.moving && now - lastDraw < 100) {
+          raf = requestAnimationFrame(tick);
+          return;
+        }
+        lastDraw = now;
 
         const done = { quiz: false, sql: false, algo: false, logique: false };
         for (const s of L.stages) done[s.gem] = s.done;

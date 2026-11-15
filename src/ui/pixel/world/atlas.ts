@@ -12,6 +12,7 @@
  *   building-*   64 × 48
  *   portal-*     48 × 48
  *   lamp         8 × 24
+ *   prop-*       crate 12 × 10, vending 12 × 18, bench 24 × 10, plant 10 × 14, dumpster 20 × 12
  *   player       60 × 14 : 6 images de 10 × 14 côte à côte, par direction
  *                (bas, haut, côté gauche ; le côté droit est le miroir) et
  *                par pas de marche (2 images chacune).
@@ -34,6 +35,11 @@ export const WORLD_ASSETS = [
   "portal-open-b",
   "lamp",
   "player",
+  "prop-crate",
+  "prop-vending",
+  "prop-bench",
+  "prop-plant",
+  "prop-dumpster",
   "gem-quiz",
   "gem-sql",
   "gem-algo",

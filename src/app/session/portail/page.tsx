@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { currentCandidate } from "@/server/candidate/current";
 import { loadPublicInstance } from "@/server/content/registry";
-import { NightShell } from "@/ui/pixel/NightShell";
 import { StageLoading } from "../StageLoading";
 import { PortalClient } from "./PortalClient";
 
@@ -20,11 +19,9 @@ async function PortailScreen() {
 export default function PortailPage() {
   return (
     <Suspense fallback={<StageLoading />}>
-      <NightShell>
-        <div className="px-stage px-stage-wide">
-          <PortailScreen />
-        </div>
-      </NightShell>
+      <div className="px-stage px-stage-wide">
+        <PortailScreen />
+      </div>
     </Suspense>
   );
 }

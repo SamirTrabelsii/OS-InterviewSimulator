@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BUILDINGS,
+  PROPS,
   START,
   TARGETS,
   TARGET_IDS,
@@ -107,5 +108,32 @@ describe("monde du hub : proximité et chemins", () => {
   });
   it("est déterministe", () => {
     expect(findPath(START, TARGETS.portail)).toEqual(findPath(START, TARGETS.portail));
+  });
+});
+
+describe("monde du hub : décor", () => {
+  const SIZE: Record<string, [number, number]> = {
+    "prop-crate": [12, 10],
+    "prop-vending": [12, 18],
+    "prop-bench": [24, 10],
+    "prop-plant": [10, 14],
+    "prop-dumpster": [20, 12],
+  };
+  it("les accessoires tiennent dans le monde", () => {
+    for (const p of PROPS) {
+      const [w, h] = SIZE[p.sprite];
+      expect(p.x, p.sprite).toBeGreaterThanOrEqual(0);
+      expect(p.y, p.sprite).toBeGreaterThanOrEqual(0);
+      expect(p.x + w, p.sprite).toBeLessThanOrEqual(WORLD_W);
+      expect(p.y + h, p.sprite).toBeLessThanOrEqual(WORLD_H);
+    }
+  });
+  it("aucun accessoire ne recouvre une zone praticable (la rue, la place)", () => {
+    for (const p of PROPS) {
+      const [w, h] = SIZE[p.sprite];
+      for (const [dx, dy] of [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1], [w / 2, h / 2]]) {
+        expect(isWalkable({ x: p.x + dx, y: p.y + dy }), `${p.sprite} ${p.x},${p.y}`).toBe(false);
+      }
+    }
   });
 });
