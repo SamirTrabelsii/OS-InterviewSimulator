@@ -1,0 +1,241 @@
+/*
+ * « Salle de contrôle » : thème de l'espace recruteur.
+ * Réutilise les jetons nuit (tokens.css) et les composants pixel.css.
+ * Règles : pixel à l'échelle 1 (néons discrets), textes et tableaux en
+ * police très lisible, police pixel réservée aux titres et étiquettes,
+ * aucune animation décorative.
+ */
+.theme-night.theme-control {
+  --ps: 1;
+  --px: calc(var(--ps) * 1px);
+  font-family: var(--f-read);
+  font-size: 1rem;
+  line-height: 1.5;
+  background: var(--c-bg-1);
+}
+
+/* Les gemmes restent grandes (12 × 10 en échelle 2) pour être lisibles d'un coup d'œil. */
+.theme-control .rc-gems {
+  --ps: 2;
+  --px: calc(var(--ps) * 1px);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.theme-control .rc-gems .px-gem {
+  display: inline-flex;
+}
+
+/* Les panneaux n'ont pas de marge propre : c'est la grille qui espace. */
+.theme-control .px-panel {
+  margin: 0;
+  padding: 14px 16px;
+}
+.theme-control .px-panel-title {
+  font-size: 0.75rem;
+}
+
+/* ---------------------------------------------------------- en-tête */
+.rc-header {
+  background: var(--c-bg-0);
+  border-bottom: 1px solid var(--c-line-1);
+}
+.rc-header-in {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 10px 24px;
+}
+.rc-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--f-pixel);
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-cyan);
+  text-decoration: none;
+}
+.rc-brand small {
+  font-size: 0.625rem;
+  color: var(--c-text-dim);
+  letter-spacing: 0.1em;
+}
+.rc-nav {
+  display: flex;
+  gap: 4px;
+  margin-right: auto;
+}
+.rc-nav a,
+.rc-account button {
+  font-family: var(--f-pixel);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-dim);
+  text-decoration: none;
+  padding: 8px 10px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.rc-nav a:hover,
+.rc-account button:hover {
+  color: var(--c-text);
+  background: var(--c-surface-2);
+}
+.rc-header a:focus-visible,
+.rc-header button:focus-visible {
+  outline: 2px solid var(--c-amber);
+  outline-offset: 1px;
+}
+.rc-account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--c-text-dim);
+}
+
+/* ---------------------------------------------------------- page */
+.rc-main {
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+.rc-h1 {
+  font-family: var(--f-pixel);
+  font-size: 1.375rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--c-text);
+}
+.rc-sub {
+  margin: 4px 0 0;
+  color: var(--c-text-dim);
+  font-size: 0.9375rem;
+}
+.rc-label {
+  font-family: var(--f-pixel);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-dim);
+}
+.rc-term {
+  text-decoration: underline dotted var(--c-text-mute);
+  text-underline-offset: 3px;
+  cursor: help;
+}
+.rc-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Boutons de l'espace recruteur : même gabarit, plus compacts. */
+.theme-control .px-btn {
+  min-height: 34px;
+  padding: 8px 14px;
+  margin: 0 1px 3px;
+  font-size: 0.75rem;
+}
+.theme-control .px-btn-sm {
+  min-height: 28px;
+  padding: 5px 10px;
+  font-size: 0.6875rem;
+}
+
+/* Liens et boutons-texte à l'intérieur du contenu. */
+.rc-link {
+  color: var(--c-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+.rc-link:hover {
+  color: var(--c-cyan-l);
+}
+.rc-link:focus-visible {
+  outline: 2px solid var(--c-amber);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------- avatar */
+.rc-avatar {
+  flex: none;
+  image-rendering: pixelated;
+  background: var(--c-bg-0);
+  padding: 2px;
+  box-sizing: content-box;
+}
+.rc-avatar[data-tone="cyan"] rect { fill: var(--c-cyan); }
+.rc-avatar[data-tone="green"] rect { fill: var(--c-green); }
+.rc-avatar[data-tone="magenta"] rect { fill: var(--c-magenta); }
+.rc-avatar[data-tone="amber"] rect { fill: var(--c-amber); }
+.rc-avatar[data-tone="violet"] rect { fill: var(--c-violet); }
+
+/* ---------------------------------------------------------- badges */
+.rc-badge {
+  --b: var(--c-text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--f-pixel);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 5px 8px;
+  color: var(--b);
+  background: var(--c-bg-0);
+  box-shadow: inset 0 0 0 1px var(--b);
+  white-space: nowrap;
+}
+.rc-badge[data-tone="cyan"] { --b: var(--c-cyan); }
+.rc-badge[data-tone="green"] { --b: var(--c-green); }
+.rc-badge[data-tone="amber"] { --b: var(--c-amber); }
+.rc-badge[data-tone="magenta"] { --b: var(--c-magenta); }
+.rc-badge[data-tone="mute"] { --b: var(--c-text-dim); }
+/* Le badge « À noter » est plein : c'est la seule chose qui appelle une action. */
+.rc-badge[data-strong="true"] {
+  background: var(--b);
+  color: var(--c-bg-0);
+}
+.rc-dot {
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  display: inline-block;
+}
+
+/* ---------------------------------------------------------- feuille « ancienne interface » */
+/*
+ * Les pages recruteur pas encore refaites (5c, 5d) gardent leur apparence
+ * d'origine, sur le fond clair ou sombre du système, à l'intérieur du
+ * nouvel en-tête. Cette classe disparaît quand la dernière est migrée.
+ */
+.rc-legacy {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}

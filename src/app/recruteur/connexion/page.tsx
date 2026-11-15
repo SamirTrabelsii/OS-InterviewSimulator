@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { LegacySheet } from "@/ui/pixel/control/LegacySheet";
 import { buildProviders } from "@/server/auth/providers";
 import { signInDev, signInWithGoogle } from "../actions";
 
@@ -62,14 +63,16 @@ async function ProviderButtons() {
 
 export default function ConnexionPage({ searchParams }: PageProps<"/recruteur/connexion">) {
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-4 p-6">
-      <h1 className="text-2xl font-semibold">Espace recruteur</h1>
-      <Suspense>
-        <ErrorMessage searchParams={searchParams as Promise<{ error?: string }>} />
-      </Suspense>
-      <Suspense fallback={<p className="text-zinc-500">Chargement…</p>}>
-        <ProviderButtons />
-      </Suspense>
-    </main>
+    <LegacySheet>
+      <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-4 p-6">
+        <h1 className="text-2xl font-semibold">Espace recruteur</h1>
+        <Suspense>
+          <ErrorMessage searchParams={searchParams as Promise<{ error?: string }>} />
+        </Suspense>
+        <Suspense fallback={<p className="text-zinc-500">Chargement…</p>}>
+          <ProviderButtons />
+        </Suspense>
+      </main>
+    </LegacySheet>
   );
 }

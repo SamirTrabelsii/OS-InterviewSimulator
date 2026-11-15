@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireRecruiter } from "@/server/auth/guard";
 import { db } from "@/server/db/client";
 import { loadSlotInfo } from "@/server/portal/pg";
+import { LegacySheet } from "@/ui/pixel/control/LegacySheet";
 import { ObserverView } from "./ObserverView";
 
 async function Observe({ params }: { params: Promise<{ id: string }> }) {
@@ -29,10 +30,12 @@ async function Observe({ params }: { params: Promise<{ id: string }> }) {
 
 export default function ObservePage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-6">
-      <Suspense fallback={<p className="text-zinc-500">Chargement…</p>}>
-        <Observe params={params} />
-      </Suspense>
-    </main>
+    <LegacySheet>
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-6">
+        <Suspense fallback={<p className="text-zinc-500">Chargement…</p>}>
+          <Observe params={params} />
+        </Suspense>
+      </main>
+    </LegacySheet>
   );
 }

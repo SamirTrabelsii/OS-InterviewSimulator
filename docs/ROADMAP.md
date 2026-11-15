@@ -254,6 +254,53 @@ Parties (une à la fois, arrêt et revue entre chaque) :
    animations réduites (système ou interrupteur de la démo) : pas de
    clignotement, gemmes immobiles, trajets instantanés. Démos : `/dev/ui`,
    `/dev/hub`, `/dev/screens` (404 en production).
+5. **Interface recruteur** — « la salle de contrôle du maître du jeu ».
+   Même univers que le côté candidat, mais un outil de travail
+   professionnel. Aucun changement de logique serveur, d'API ni de
+   règles d'autorisation : affichage seulement.
+   - *Du jeu dans les détails* : titres, étiquettes et chiffres clés en
+     police pixel (`--font-pixel`) ; mêmes panneaux et néons que le côté
+     candidat, en plus discret (halo 0 ou 1, jamais de scintillement) ;
+     gemmes en icônes (`GemIcon`) pour l'avancement ; un petit avatar pixel
+     par candidat (dérivé du nom ou de l'identifiant de session, donc
+     stable) ; mini-carte du quartier pour suivre une session en direct ;
+     vocabulaire du jeu (créneau = « mission », Portail, gemmes, binôme).
+   - *Du professionnel dans le fond* : textes, tableaux et notes en police
+     très lisible (`--font-read`, code en `--font-code`), informations
+     denses et bien rangées, aucune animation distrayante (rien qui bouge
+     hors de la lecture du replay et de la mini-carte en direct, qui
+     respecte « réduire les animations »), actions évidentes : créer un
+     créneau, copier un lien, observer, noter.
+   - *Priorités* : (1) tableau de bord où l'on voit d'un coup d'œil les
+     créneaux et l'état des candidats ; (2) page « Replay et grille » où
+     replay et notation tiennent côte à côte, sans défilement de page.
+   - *Pages* : `/recruteur` (tableau de bord), `/recruteur/sessions/[id]`
+     (Replay et grille), `/recruteur/creneaux/[id]/portail` (observation en
+     direct), `/recruteur/creneaux/nouveau`, `/recruteur/connexion`, plus un
+     gabarit commun `src/app/recruteur/layout.tsx` (en-tête, navigation,
+     compte). Démo hors production : `/dev/recruteur`.
+   - *Réutilisé* : `src/ui/pixel` (`PixelPanel`, `PixelButton`, `PixelLink`,
+     `PixelBar`, `GemIcon`, `PixelStatus`, `Hud`, `Sprite`, `NightShell` ou
+     variante, polices, jetons). Nouveaux composants dans
+     `src/ui/pixel/control/` seulement s'ils servent deux fois : avatar,
+     mini-carte (réutilise le rendu de `world/`), ligne de candidat, onglets.
+   - *Tests* : contrastes AA du thème de travail, avatar déterministe,
+     mini-carte (position à partir de l'état, sans accès à la grille), pages
+     recruteur toujours en 401/redirection hors domaine, `npm run
+     test:build` inchangé.
+   - *Sous-découpage prévu* (arrêt et revue entre chacun) : 5a socle et
+     gabarit ; 5b tableau de bord ; 5c Replay et grille ; 5d observation du
+     Portail, création de créneau, connexion, finitions.
+   - *Ajouts validés* : badge « À noter » sur chaque candidat dont la session
+     est terminée et pas encore évaluée par le recruteur connecté, et temps
+     restant des sessions en cours ; le mot « mission » s'affiche avec
+     « créneau » en sous-titre et en info-bulle.
+   - **5a Socle et gabarit ✅ (2026-11-15)** : `src/ui/pixel/control/`
+     (`control.css` : thème nuit à pixel d'échelle 1, textes en police de
+     lecture, aucune animation ; `RecruiterShell` ; `PixelAvatar` ;
+     `GemRow`), `src/app/recruteur/layout.tsx` (en-tête, navigation,
+     compte). Les pages pas encore refaites gardent leur apparence d'origine
+     dans `LegacySheet` (transitoire, retiré en 5c et 5d).
 
 **Terminé quand** : aucun changement de logique serveur ; `npm test`,
 `npm run lint`, `npm run test:build` passent ; parcours complet candidat
