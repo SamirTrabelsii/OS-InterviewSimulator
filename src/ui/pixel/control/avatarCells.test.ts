@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { contrastRatio } from "../contrast";
-import { AVATAR_SIZE, AVATAR_TONES, makeAvatar } from "./avatar";
+import { AVATAR_SIZE, AVATAR_TONES, makeAvatar } from "./avatarCells";
 
 describe("avatar pixel", () => {
   it("est déterministe", () => {

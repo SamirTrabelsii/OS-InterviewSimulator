@@ -1,6 +1,6 @@
 // Notation et replay côté recruteur. Rien de ce module ne doit être appelé
 // depuis une route ou une page candidat (vérifié par evaluations.test.ts).
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { grille } from "@content/grille";
 import { evaluate, type Resultat } from "@/engine/grille/adequation";
@@ -55,6 +55,19 @@ export async function loadMyEvaluation(db: Db, sessionId: string, recruiterEmail
     .where(and(eq(schema.evaluations.sessionId, sessionId), eq(schema.evaluations.recruiterEmail, recruiterEmail)))
     .limit(1);
   return row ? toView(row) : null;
+}
+
+/**
+ * Sessions que CE recruteur a déjà notées (pour le badge « À noter » du
+ * tableau de bord). Ne renvoie que des identifiants : ni note ni adéquation.
+ */
+export async function evaluatedSessionIds(db: Db, recruiterEmail: string, sessionIds: readonly string[]): Promise<Set<string>> {
+  if (sessionIds.length === 0) return new Set();
+  const rows = await db
+    .select({ id: schema.evaluations.sessionId })
+    .from(schema.evaluations)
+    .where(and(eq(schema.evaluations.recruiterEmail, recruiterEmail), inArray(schema.evaluations.sessionId, [...sessionIds])));
+  return new Set(rows.map((r) => r.id));
 }
 
 /**

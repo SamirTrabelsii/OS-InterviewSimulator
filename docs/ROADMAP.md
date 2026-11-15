@@ -301,6 +301,17 @@ Parties (une à la fois, arrêt et revue entre chaque) :
      `GemRow`), `src/app/recruteur/layout.tsx` (en-tête, navigation,
      compte). Les pages pas encore refaites gardent leur apparence d'origine
      dans `LegacySheet` (transitoire, retiré en 5c et 5d).
+   - **5b Tableau de bord ✅ (2026-11-15)** : `/recruteur` en
+     « missions » (`DashboardView`) : compteurs (en direct, à noter, à
+     venir), puis sections En direct / À venir / Passées, une carte par
+     créneau, une ligne par candidat (avatar, état, gemmes, action).
+     États purs dans `src/engine/recruteur/dashboard.ts` (testés) : badge
+     « À noter » (terminée, pas notée par le recruteur connecté, lu via
+     `evaluatedSessionIds` qui ne renvoie que des identifiants), temps
+     restant à la minute (`TimeLeft`), créneau « en cours » dont le temps est
+     écoulé classé en « Passées ». Rafraîchissement toutes les 30 s s'il y a
+     du direct. « Mission » : sous-titre « Vos créneaux d'entretien » et
+     info-bulle. Démo sans base : `/dev/recruteur` (404 en production).
 
 **Terminé quand** : aucun changement de logique serveur ; `npm test`,
 `npm run lint`, `npm run test:build` passent ; parcours complet candidat

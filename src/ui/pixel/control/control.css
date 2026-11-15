@@ -239,3 +239,112 @@
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ---------------------------------------------------------- tableau de bord */
+.rc-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 12px;
+}
+.theme-control .rc-stat {
+  padding: 10px 16px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.rc-stat-n {
+  margin: 0;
+  font-family: var(--f-pixel);
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--glow);
+}
+.rc-stat .rc-label {
+  margin: 0;
+}
+.rc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rc-section-h {
+  margin: 0;
+}
+.rc-slots {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 34rem), 1fr));
+  gap: 14px;
+}
+.rc-slot-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 10px;
+}
+.rc-slot-title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--c-text);
+}
+.rc-slot-meta {
+  margin: 2px 0 0;
+  font-size: 0.875rem;
+  color: var(--c-text-dim);
+}
+.rc-cands {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.rc-cand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--c-line-1);
+}
+.rc-cand-name {
+  flex: 1 1 9rem;
+  min-width: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.rc-cand-act {
+  display: flex;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+.rc-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+.rc-copy code {
+  font-family: var(--f-code);
+  font-size: 0.75rem;
+  background: var(--c-bg-0);
+  padding: 4px 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rc-dev {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px dashed var(--c-amber);
+  font-size: 0.875rem;
+  color: var(--c-amber);
+}
+.rc-dev p {
+  margin: 4px 0 0;
+}

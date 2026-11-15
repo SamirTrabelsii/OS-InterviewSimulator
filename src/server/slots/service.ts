@@ -79,7 +79,7 @@ export type SlotSummary = {
   status: string;
   scheduledAt: Date;
   createdBy: string;
-  candidates: { sessionId: string; name: string; status: string; gems: string[] }[];
+  candidates: { sessionId: string; name: string; status: string; gems: string[]; deadline: Date | null }[];
 };
 
 /** Liste pour le tableau de bord. Ne contient ni jeton, ni hash, ni graine. */
@@ -93,6 +93,7 @@ export async function listSlots(db: Db, limit = 50): Promise<SlotSummary[]> {
       name: schema.sessions.candidateName,
       status: schema.sessions.status,
       gems: schema.sessions.gems,
+      deadline: schema.sessions.deadline,
     })
     .from(schema.sessions)
     .where(inArray(schema.sessions.slotId, slots.map((s) => s.id)))
@@ -107,7 +108,7 @@ export async function listSlots(db: Db, limit = 50): Promise<SlotSummary[]> {
     createdBy: s.createdBy,
     candidates: sessions
       .filter((x) => x.slotId === s.id)
-      .map((x) => ({ sessionId: x.id, name: x.name, status: x.status, gems: x.gems })),
+      .map((x) => ({ sessionId: x.id, name: x.name, status: x.status, gems: x.gems, deadline: x.deadline })),
   }));
 }
 

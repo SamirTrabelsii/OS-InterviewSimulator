@@ -1,4 +1,4 @@
-import { AVATAR_SIZE, makeAvatar } from "./avatar";
+import { AVATAR_SIZE, makeAvatar } from "./avatarCells";
 
 /** Petit avatar pixel, décoratif (le nom est toujours écrit à côté). */
 export function PixelAvatar({ seed, size = 5 }: { seed: string; size?: number }) {

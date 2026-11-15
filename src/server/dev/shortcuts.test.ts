@@ -21,7 +21,12 @@ describe("raccourcis dev : jamais en production", () => {
 
   it("le bouton n'est rendu et l'action n'agit que derrière devShortcutsEnabled", () => {
     const page = readFileSync(join(process.cwd(), "src/app/recruteur/page.tsx"), "utf8");
-    expect(page).toMatch(/devShortcutsEnabled\(\)\s*&&[^]*<DevOpenPortal/);
+    // La page ne transmet le drapeau qu'à partir de devShortcutsEnabled() ;
+    // la vue ne rend le bouton que si ce drapeau (faux par défaut) est vrai.
+    expect(page).toMatch(/devShortcuts=\{devShortcutsEnabled\(\)\}/);
+    const view = readFileSync(join(process.cwd(), "src/app/recruteur/DashboardView.tsx"), "utf8");
+    expect(view).toMatch(/devShortcuts = false/);
+    expect(view).toMatch(/devShortcuts\s*&&[^]*<DevOpenPortal/);
     const actions = readFileSync(join(process.cwd(), "src/app/recruteur/actions.ts"), "utf8");
     expect(actions).toMatch(/if \(!devShortcutsEnabled\(\)\) return/);
   });
