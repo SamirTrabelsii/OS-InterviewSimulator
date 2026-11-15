@@ -20,8 +20,8 @@ async function PortailScreen() {
 export default function PortailPage() {
   return (
     <Suspense fallback={<StageLoading />}>
+      <Backdrop id="portail" />
       <div className="px-stage px-stage-wide">
-        <Backdrop id="portail" />
         <PortailScreen />
       </div>
     </Suspense>

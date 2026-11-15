@@ -27,8 +27,9 @@ export function WelcomeScreen({
   callUrl?: string | null;
 }) {
   return (
-    <main className="px-center">
+    <>
       <Backdrop id="quartier" />
+      <main className="px-center">
       <p className="px-eyebrow">{company}</p>
       <h1 className="px-hero-title">{title}</h1>
       <WorldPreview done={[]} label="Le quartier du Portail, de nuit : quatre bâtiments et le Portail fermé au centre" />
@@ -103,7 +104,8 @@ export function WelcomeScreen({
         </p>
       </PixelPanel>
       {action}
-    </main>
+      </main>
+    </>
   );
 }
 
@@ -129,8 +131,9 @@ export function ReportScreen({
   followUpDays?: number;
 }) {
   return (
-    <main className="px-center">
+    <>
       <Backdrop id="quartier" />
+      <main className="px-center">
       <p className="px-eyebrow">{company}</p>
       <h1 className="px-hero-title">{retired ? "Session clôturée" : "Rapport de mission"}</h1>
       {retired ? (
@@ -183,6 +186,7 @@ export function ReportScreen({
           </p>
         </>
       )}
-    </main>
+      </main>
+    </>
   );
 }

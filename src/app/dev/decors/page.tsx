@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { NightShell } from "@/ui/pixel/NightShell";
 import { PixelPanel } from "@/ui/pixel/components";
 import { isDevUiEnabled } from "@/ui/pixel/devOnly";
@@ -10,8 +11,7 @@ import { INTERIOR_IDS, type InteriorId } from "@/ui/pixel/world/art/interiors";
 export const metadata: Metadata = { title: "Décors d'intérieur (dev)", robots: { index: false } };
 
 /** Démo dev : chaque décor derrière un énoncé et une zone de code factices (?id=savoir|archives|calcul|intuition|portail). */
-export default async function DecorsPage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
-  if (!isDevUiEnabled()) notFound();
+async function Decors({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
   const { id } = await searchParams;
   const current = (INTERIOR_IDS as string[]).includes(id ?? "") ? (id as InteriorId) : "savoir";
   return (
@@ -33,5 +33,14 @@ export default async function DecorsPage({ searchParams }: { searchParams: Promi
         </PixelPanel>
       </div>
     </NightShell>
+  );
+}
+
+export default function DecorsPage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
+  if (!isDevUiEnabled()) notFound();
+  return (
+    <Suspense>
+      <Decors searchParams={searchParams} />
+    </Suspense>
   );
 }
