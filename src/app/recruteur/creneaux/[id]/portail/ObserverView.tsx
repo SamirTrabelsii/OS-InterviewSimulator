@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { MapSpot } from "@/engine/recruteur/live";
 import { usePortal } from "@/app/session/portail/usePortal";
+import { PortalChat } from "@/app/session/portail/PortalChat";
 import { PixelButton, PixelPanel, PixelStatus } from "@/ui/pixel/components";
 import { PixelAvatar } from "@/ui/pixel/control/Avatar";
 import { GemRow } from "@/ui/pixel/control/Gems";
@@ -125,6 +126,8 @@ export function ObserverView({ slotId, started, candidates }: { slotId: string; 
           </div>
         </div>
       )}
+
+      {view?.chat && view.chat.length > 0 && <PortalChat chat={view.chat} />}
 
       {/* Positions des candidats sur la carte : rechargées toutes les 10 s. */}
       <LiveRefresh everyMs={10_000} />

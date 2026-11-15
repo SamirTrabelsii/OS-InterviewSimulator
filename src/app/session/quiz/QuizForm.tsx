@@ -14,6 +14,7 @@ export function QuizForm({ questions }: { questions: Question[] }) {
   const [index, setIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   const q = questions[index];
   const last = index === questions.length - 1;
@@ -21,7 +22,6 @@ export function QuizForm({ questions }: { questions: Question[] }) {
   const complete = questions.every((x) => answers[x.id]);
 
   async function submit() {
-    if (!confirm("Valider vos réponses ? Une seule validation est possible.")) return;
     setPending(true);
     setError(null);
     const res = await fetch("/api/session/gemmes/quiz", {
@@ -30,10 +30,11 @@ export function QuizForm({ questions }: { questions: Question[] }) {
       body: JSON.stringify({ answers }),
     });
     if (res.ok) {
-      router.push("/session");
+      // Reste sur la page : le cadre affiche « Gemme obtenue » (message uniforme à toutes les épreuves).
       router.refresh();
       return;
     }
+    setConfirming(false);
     setError(((await res.json().catch(() => ({}))) as { error?: string }).error ?? "Une erreur est survenue.");
     setPending(false);
   }
@@ -43,10 +44,17 @@ export function QuizForm({ questions }: { questions: Question[] }) {
       onSubmit={(e) => {
         e.preventDefault();
         if (!last) setIndex((i) => i + 1);
-        else if (complete) void submit();
+        else if (complete) setConfirming(true);
       }}
       className="px-stack"
     >
+      <PixelStatus tone="warn">
+        <p className="px-status-title">Une seule tentative</p>
+        <p>
+          Vous pouvez revenir en arrière tant que vous n&apos;avez pas validé. Une fois le quiz validé, il est définitif : la gemme est acquise, quel que
+          soit le résultat.
+        </p>
+      </PixelStatus>
       <p className="px-stepper-label" aria-live="polite">
         Question {index + 1} sur {questions.length}
       </p>
@@ -74,6 +82,21 @@ export function QuizForm({ questions }: { questions: Question[] }) {
         </fieldset>
       </PixelPanel>
       {error && <PixelStatus tone="bad">{error}</PixelStatus>}
+      {confirming ? (
+        <PixelPanel tone="amber" glow={1} title="Valider vos réponses ?">
+          <p className="px-read" role="alert" style={{ marginTop: 0 }}>
+            Vous ne pourrez plus les modifier ni refaire le quiz.
+          </p>
+          <div className="px-actions">
+            <PixelButton variant="primary" onClick={() => void submit()} disabled={pending}>
+              {pending ? "Validation…" : "Oui, valider définitivement"}
+            </PixelButton>
+            <PixelButton variant="ghost" onClick={() => setConfirming(false)} disabled={pending}>
+              Revoir mes réponses
+            </PixelButton>
+          </div>
+        </PixelPanel>
+      ) : (
       <div className="px-actions">
         {index > 0 && (
           <PixelButton variant="ghost" onClick={() => setIndex((i) => i - 1)} disabled={pending}>
@@ -84,6 +107,7 @@ export function QuizForm({ questions }: { questions: Question[] }) {
           {last ? (pending ? "Validation…" : "Valider mes réponses") : "Suivante →"}
         </PixelButton>
       </div>
+      )}
     </form>
   );
 }

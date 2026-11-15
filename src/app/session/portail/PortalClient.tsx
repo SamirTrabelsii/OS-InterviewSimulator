@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import type { PortalView } from "@/engine/portal";
 import { PixelButton, PixelLink, PixelPanel, PixelStatus } from "@/ui/pixel/components";
 import { CodeEditor } from "../CodeEditor";
+import { TimeAlerts } from "../Countdown";
 import { EventTracker } from "../EventTracker";
+import { PortalChat } from "./PortalChat";
 import { reasonText, usePortal, type Link as LinkState } from "./usePortal";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -19,10 +21,14 @@ function Clock({ view, offset }: { view: PortalView; offset: number }) {
   const [left, setLeft] = useState<number | null>(null);
   useEffect(() => {
     if (!view.deadline) return;
+    let refreshed = false;
     const tick = () => {
       const ms = Date.parse(view.deadline!) - (Date.now() + offset);
       setLeft(ms);
-      if (ms <= 0) router.refresh();
+      if (ms <= 0 && !refreshed) {
+        refreshed = true;
+        setTimeout(() => router.refresh(), 2_500); // le message « temps écoulé » reste lisible
+      }
     };
     tick();
     const id = setInterval(tick, 1000);
@@ -31,9 +37,12 @@ function Clock({ view, offset }: { view: PortalView; offset: number }) {
   if (left === null) return null;
   const total = Math.max(0, Math.ceil(left / 1000));
   return (
-    <span role="timer" className="px-hud-time" data-urgent={total < 300}>
-      {String(Math.floor(total / 60)).padStart(2, "0")}:{String(total % 60).padStart(2, "0")}
-    </span>
+    <>
+      {view.deadline && <TimeAlerts deadlineIso={view.deadline} offsetMs={offset} />}
+      <span role="timer" className="px-hud-time" data-urgent={total < 300}>
+        {String(Math.floor(total / 60)).padStart(2, "0")}:{String(total % 60).padStart(2, "0")}
+      </span>
+    </>
   );
 }
 
@@ -77,9 +86,12 @@ export function PortalClient({ epilogue }: { epilogue: string }) {
       <>
         <EventTracker stage="portail" />
         <LinkBanner link={link} />
-        <p className="px-muted" role="status">
-          Connexion au Portail…
-        </p>
+        <div className="px-loading" role="status">
+          <span className="px-spinner" aria-hidden />
+          <p className="px-read" style={{ margin: 0 }}>
+            Connexion au Portail… (quelques secondes)
+          </p>
+        </div>
       </>
     );
   }
@@ -99,6 +111,11 @@ export function PortalClient({ epilogue }: { epilogue: string }) {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
             <PartnerBadge view={view} />
+            {view.callUrl && (
+              <a href={view.callUrl} target="_blank" rel="noopener noreferrer" className="px-pill px-link">
+                Rejoindre l&apos;appel ↗
+              </a>
+            )}
             <Clock view={view} offset={offset.current} />
           </div>
         </div>
@@ -122,6 +139,7 @@ export function PortalClient({ epilogue }: { epilogue: string }) {
         </PixelPanel>
       )}
       {view.phase === "ouvert" && <Open view={view} send={send} link={link} />}
+      {view.chat && view.phase !== "termine" && <PortalChat chat={view.chat} send={send} partnerName={view.partner?.name} />}
     </section>
   );
 }
@@ -134,6 +152,11 @@ function Closed({ view }: { view: PortalView }) {
         Il s&apos;ouvrira dès que {view.partner ? "vous et votre binôme aurez" : "vous aurez"} les 4 gemmes
         {latest ? `, au plus tard à ${latest.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}` : ""}.
       </p>
+      {view.partner && (
+        <p className="px-muted" role="status">
+          {view.partner.name} : {view.partner.gems} sur 4 gemmes · {view.partner.online ? "connecté" : "hors ligne"}.
+        </p>
+      )}
       <div className="px-actions">
         <PixelLink href="/session" variant="primary">
           Retourner chercher les gemmes manquantes
@@ -206,7 +229,7 @@ function PilotEditor({ view, send, link, onNote }: { view: PortalView; send: Sen
       </div>
       {view.role === "pilote" && (
         <PixelStatus>
-          <p>Vous ne voyez ni les logs ni le ticket du client : votre copilote les a. Parlez-vous (Teams) !</p>
+          <p>Vous ne voyez ni les logs ni le ticket du client : votre copilote les a. Parlez-vous : le plus simple est l&apos;appel (lien « Rejoindre l&apos;appel » en haut), sinon le chat de secours est plus bas.</p>
         </PixelStatus>
       )}
     </PixelPanel>

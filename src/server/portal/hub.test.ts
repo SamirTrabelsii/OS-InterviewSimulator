@@ -385,7 +385,7 @@ describe("ouverture et fin du temps", () => {
     const s = await h.ready(a);
     expect(s.phase).toBe("ouvert");
     expect(s.role).toBe("pilote");
-    expect(s.partner).toEqual({ name: "Bo", online: false });
+    expect(s.partner).toEqual({ name: "Bo", online: false, gems: expect.any(Number) });
     const b = h.client(B);
     expect((await h.ready(b)).role).toBe("copilote");
   });
@@ -435,5 +435,46 @@ describe("repli solo", () => {
     await gone;
     const s = await h.waitFor(() => a.states.at(-1)?.role === "solo" && a.states.at(-1));
     expect(s.logs).toBeDefined();
+  });
+});
+
+describe("chat de secours", () => {
+  beforeEach(async () => (h = await setup()));
+
+  it("un message est relayé au binôme, nettoyé, journalisé pour le replay, et relu par les nouveaux arrivants", async () => {
+    const { a, b } = await pair();
+    expect(await h.call(a.socket, "chat:send", { text: "  Salut   Bo  " })).toMatchObject({ ok: true });
+    const seen = await h.waitFor(() => b.states.at(-1)?.chat?.length === 1 && b.states.at(-1));
+    expect(seen.chat?.[0]).toMatchObject({ name: "Ana", text: "Salut Bo", mine: false });
+    expect((await h.waitFor(() => a.states.at(-1)?.chat?.length === 1 && a.states.at(-1))).chat?.[0].mine).toBe(true);
+    expect(h.state.journal.filter((e) => e.type === "portail.chat")).toEqual([
+      { sessionId: A, actor: "candidat", type: "portail.chat", payload: { text: "Salut Bo" } },
+    ]);
+  });
+
+  it("refuse un message vide, trop rapproché ou après la fin", async () => {
+    const { a } = await pair();
+    expect(await h.call(a.socket, "chat:send", { text: "   " })).toMatchObject({ ok: false, reason: "invalide" });
+    expect(await h.call(a.socket, "chat:send", { text: 42 })).toMatchObject({ ok: false, reason: "invalide" });
+    expect(await h.call(a.socket, "chat:send", { text: "un" })).toMatchObject({ ok: true });
+    expect(await h.call(a.socket, "chat:send", { text: "deux" })).toMatchObject({ ok: false, reason: "trop-tot" });
+    later(2000);
+    expect(await h.call(a.socket, "chat:send", { text: "deux" })).toMatchObject({ ok: true });
+    later(40 * 60_000);
+    expect(await h.call(a.socket, "chat:send", { text: "trois" })).toMatchObject({ ok: false, reason: "termine" });
+  });
+
+  it("n'existe pas en solo", async () => {
+    h.state.members[1].status = "expiree";
+    const a = h.client(A);
+    expect((await h.ready(a)).chat).toBeNull();
+    expect(await h.call(a.socket, "chat:send", { text: "allô" })).toMatchObject({ ok: false, reason: "pas-de-binome" });
+  });
+
+  it("expose le lien de l'appel et les gemmes du binôme", async () => {
+    const a = h.client(A);
+    const s = await h.ready(a);
+    expect(s.callUrl).toBeNull();
+    expect(s.partner).toMatchObject({ name: "Bo", gems: 4 });
   });
 });

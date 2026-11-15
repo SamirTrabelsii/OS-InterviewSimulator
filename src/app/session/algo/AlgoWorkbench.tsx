@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { jsonEqual } from "@/engine/validators/algo";
 import { CodeEditor } from "../CodeEditor";
-import { SubmissionStatus, useCodeSnapshots, useSubmission } from "../code-stage";
+import { DraftNote, EditorPlaceholder, SubmissionStatus, useCodeSnapshots, useDraft, useSubmission } from "../code-stage";
 import { trackEvent } from "../EventTracker";
 import { PixelButton, PixelPanel, PixelStatus } from "@/ui/pixel/components";
 
@@ -77,6 +77,7 @@ const show = (v: unknown) => JSON.stringify(v);
 
 export function AlgoWorkbench({ starterCode, functionName, examples }: { starterCode: string; functionName: string; examples: Example[] }) {
   const codeRef = useCodeSnapshots("algo", starterCode);
+  const draft = useDraft("algo", starterCode, codeRef);
   const runner = useRef<PythonRunner | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
@@ -110,15 +111,19 @@ export function AlgoWorkbench({ starterCode, functionName, examples }: { starter
   return (
     <div className="px-stack">
       <PixelPanel tone="magenta" title="Votre code">
-        <CodeEditor
-          night
-          language="python"
-          initialValue={starterCode}
-          onChange={(v) => (codeRef.current = v)}
-          onRun={() => void execute()}
-          label="Code Python"
-          height={320}
-        />
+        {draft.initial === null ? (
+          <EditorPlaceholder height={320} />
+        ) : (
+          <CodeEditor
+            night
+            language="python"
+            initialValue={draft.initial}
+            onChange={draft.onChange}
+            onRun={() => void execute()}
+            label="Code Python"
+            height={320}
+          />
+        )}
         <div className="px-actions">
           <PixelButton variant="primary" onClick={() => void submit({ code: codeRef.current })} disabled={pending || waitSeconds > 0}>
             {waitSeconds > 0 ? `Patientez ${waitSeconds} s` : pending ? "Tests en cours…" : "Soumettre"}
@@ -128,6 +133,7 @@ export function AlgoWorkbench({ starterCode, functionName, examples }: { starter
           </PixelButton>
         </div>
         {loading && <p className="px-muted">Python se charge dans votre navigateur…</p>}
+        <DraftNote savedAt={draft.savedAt} />
       </PixelPanel>
 
       <SubmissionStatus result={result} message={message} what="Tests cachés réussis" />

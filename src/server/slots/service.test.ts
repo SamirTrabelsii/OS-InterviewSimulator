@@ -16,6 +16,16 @@ describe("createSlotInput", () => {
     expect(createSlotInput.safeParse({ ...base, mode: "solo", candidates: ["Ana", "Bo"] }).success).toBe(false);
   });
 
+  it("le lien de l'appel est facultatif, http(s) seulement, et vide = absent", () => {
+    const ok = createSlotInput.safeParse({ ...base, mode: "binome", candidates: ["Ana", "Bo"], callUrl: " https://teams.microsoft.com/l/meetup-join/abc " });
+    expect(ok.success && ok.data.callUrl).toBe("https://teams.microsoft.com/l/meetup-join/abc");
+    const vide = createSlotInput.safeParse({ ...base, mode: "binome", candidates: ["Ana", "Bo"], callUrl: "  " });
+    expect(vide.success && vide.data.callUrl).toBeUndefined();
+    for (const callUrl of ["javascript:alert(1)", "teams.microsoft.com/x", "ftp://x.y/z"]) {
+      expect(createSlotInput.safeParse({ ...base, mode: "binome", candidates: ["Ana", "Bo"], callUrl }).success).toBe(false);
+    }
+  });
+
   it("refuse une date invalide ou un nom vide", () => {
     expect(createSlotInput.safeParse({ ...base, scheduledAt: "pas une date", mode: "solo", candidates: ["Ana"] }).success).toBe(false);
     expect(createSlotInput.safeParse({ ...base, mode: "solo", candidates: ["  "] }).success).toBe(false);

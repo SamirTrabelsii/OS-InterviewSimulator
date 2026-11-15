@@ -56,3 +56,15 @@ export function phaseAt(t0: Date | null, gemsByCandidate: readonly (readonly str
 export function canSubmit(t0: Date | null, now: Date): boolean {
   return t0 !== null && now.getTime() >= t0.getTime() && now.getTime() < deadlineFrom(t0).getTime();
 }
+
+/** Un navigateur est « connecté » s'il a donné signe de vie il y a moins de 90 s (battement toutes les 15 s ; marge pour les onglets en arrière-plan). */
+export const PRESENCE_WINDOW_MS = 90_000;
+
+export function isOnline(lastSeenAt: Date | null, now: Date): boolean {
+  return lastSeenAt !== null && now.getTime() - lastSeenAt.getTime() < PRESENCE_WINDOW_MS;
+}
+
+/** Temps restant avant la fin d'une session dont le T0 est connu (jamais négatif). */
+export function remainingMs(t0: Date, now: Date): number {
+  return Math.max(0, deadlineFrom(t0).getTime() - now.getTime());
+}

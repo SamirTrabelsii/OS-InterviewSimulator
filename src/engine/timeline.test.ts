@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canStart, canSubmit, deadlineFrom, linkIsOpen, phaseAt, portalOpenAt } from "./timeline";
+import { canStart, canSubmit, deadlineFrom, isOnline, linkIsOpen, phaseAt, portalOpenAt, remainingMs } from "./timeline";
 
 const t0 = new Date("2026-12-01T09:00:00Z");
 const at = (min: number) => new Date(t0.getTime() + min * 60_000);
@@ -47,5 +47,18 @@ describe("phases et chrono", () => {
     expect(canSubmit(t0, at(44.99))).toBe(true);
     expect(canSubmit(t0, at(45))).toBe(false);
     expect(canSubmit(null, at(1))).toBe(false);
+  });
+});
+
+describe("présence et temps restant", () => {
+  it("connecté tant que le dernier battement a moins de 90 s", () => {
+    expect(isOnline(null, at(1))).toBe(false);
+    expect(isOnline(at(1), new Date(at(1).getTime() + 89_000))).toBe(true);
+    expect(isOnline(at(1), new Date(at(1).getTime() + 91_000))).toBe(false);
+  });
+
+  it("temps restant d'un chrono commun déjà lancé (jamais négatif)", () => {
+    expect(remainingMs(t0, at(10))).toBe(35 * 60_000);
+    expect(remainingMs(t0, at(50))).toBe(0);
   });
 });

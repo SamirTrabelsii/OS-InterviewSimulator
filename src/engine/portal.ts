@@ -126,7 +126,24 @@ export function portalPhase(input: { t0: Date | null; deadline: Date | null; ope
 
 export type PortalStage = PublicInstance["stages"]["portail"];
 
-export type PlayerInfo = { id: string; name: string; online: boolean };
+export type PlayerInfo = { id: string; name: string; online: boolean; /** Nombre de gemmes obtenues (affiché tant que le Portail est fermé). */ gems?: number };
+
+// ---------------------------------------------------------------- chat de secours
+
+export const CHAT_MAX_LEN = 300;
+/** Messages gardés en mémoire et renvoyés à la connexion. */
+export const CHAT_KEEP = 60;
+/** Délai minimal entre deux messages d'un même candidat. */
+export const CHAT_COOLDOWN_MS = 1_000;
+
+export type ChatMessage = { id: number; from: string; name: string; text: string; at: string };
+
+/** Message nettoyé (espaces réduits, longueur limitée) ou null s'il est vide. */
+export function normalizeChat(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const text = raw.replace(/\s+/g, " ").trim().slice(0, CHAT_MAX_LEN);
+  return text === "" ? null : text;
+}
 
 export type PortalView = {
   phase: PortalPhase;
@@ -138,7 +155,11 @@ export type PortalView = {
   opensByLatest: string | null;
   title: string;
   story: string;
-  partner: { name: string; online: boolean } | null;
+  partner: { name: string; online: boolean; gems: number } | null;
+  /** Lien de l'appel du binôme (saisi par le recruteur), sinon null. */
+  callUrl: string | null;
+  /** Chat de secours entre binômes (null en solo). */
+  chat: { id: number; name: string; text: string; at: string; mine: boolean }[] | null;
   hand: "aucune" | "envoyee" | "recue";
   canTakeOver: boolean;
   result: RoomResult | null;
@@ -168,6 +189,8 @@ export type ViewInput = {
   opensByLatest: Date | null;
   players: readonly PlayerInfo[];
   canTakeOver: boolean;
+  callUrl?: string | null;
+  chat?: readonly ChatMessage[];
 };
 
 /**
@@ -187,7 +210,13 @@ export function buildView(i: ViewInput): PortalView {
     opensByLatest: i.opensByLatest?.toISOString() ?? null,
     title: stage.title,
     story: stage.story,
-    partner: role === "observateur" || !partner ? null : { name: partner.name, online: partner.online },
+    partner: role === "observateur" || !partner ? null : { name: partner.name, online: partner.online, gems: partner.gems ?? 0 },
+    callUrl: i.callUrl ?? null,
+    // Le chat n'existe qu'en binôme ; l'observateur recruteur le voit en lecture seule.
+    chat:
+      role === "solo" || (role !== "observateur" && !partner)
+        ? null
+        : (i.chat ?? []).map((m) => ({ id: m.id, name: m.name, text: m.text, at: m.at, mine: m.from === i.viewer })),
     hand: !room.request ? "aucune" : room.request.from === i.viewer ? "envoyee" : role === "pilote" ? "recue" : "aucune",
     canTakeOver: role === "copilote" && i.canTakeOver,
     result: open ? i.result : null,

@@ -49,6 +49,10 @@ function prepare(stage: SqlStage): Promise<Prepared> {
   return p;
 }
 
+/** Message public quand les colonnes renvoyées ne sont pas celles de l'énoncé. */
+export const columnsMessage = (expected: readonly string[]) =>
+  `Colonnes inattendues : votre requête doit renvoyer exactement ${expected.join(", ")} (dans cet ordre, avec ces noms ; utilisez AS pour renommer).`;
+
 /**
  * Corrige une requête : elle est exécutée dans le bac à sable sur le jeu
  * visible ET sur le jeu caché (anti codage en dur), puis comparée au
@@ -77,5 +81,13 @@ export async function gradeSql(stage: SqlStage, rawQuery: unknown, run: RunJob):
     const c = compareSqlResults(expected[i], r.sqlRuns![i], stage.private.orderMatters);
     return c.ok ? { dataset, ok: true } : { dataset, ok: false, reason: c.reason };
   });
-  return { ...base, passed: checks.filter((c) => c.ok).length, checks };
+  // Colonnes mal nommées ou mal ordonnées : une cause de forme, pas de fond. On le dit au candidat
+  // (les colonnes attendues sont déjà affichées dans l'énoncé) au lieu d'un « 0 / 2 » muet.
+  const wrongColumns = checks.some((c) => c.reason === "colonnes");
+  return {
+    ...base,
+    passed: checks.filter((c) => c.ok).length,
+    checks,
+    ...(wrongColumns ? { error: columnsMessage(stage.public.expectedColumns) } : {}),
+  };
 }

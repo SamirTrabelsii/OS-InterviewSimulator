@@ -48,6 +48,7 @@ export async function createSlotAction(_prev: CreateSlotState, formData: FormDat
     mode: formData.get("mode"),
     scheduledAt: formData.get("scheduledAt"),
     candidates: formData.getAll("candidate").map(String).filter((c) => c.trim() !== ""),
+    callUrl: formData.get("callUrl") ?? undefined,
   });
   if (!parsed.success) {
     return { status: "error", message: parsed.error.issues.map((i) => i.message).join(" ") };

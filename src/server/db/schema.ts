@@ -29,6 +29,8 @@ export const slots = pgTable("slots", {
   // T0 commun aux candidats du créneau : premier clic sur « Commencer ».
   startedAt: timestamp("started_at", { withTimezone: true }),
   createdBy: text("created_by").notNull(), // email du recruteur
+  // Lien de l’appel du binôme (Teams, Meet…), saisi par le recruteur ; optionnel.
+  callUrl: text("call_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -47,6 +49,8 @@ export const sessions = pgTable(
     startedAt: timestamp("started_at", { withTimezone: true }),
     deadline: timestamp("deadline", { withTimezone: true }),
     gems: text("gems").array().notNull().default(sql`'{}'::text[]`),
+    // Dernier signe de vie du navigateur (battement) : sert à afficher « connecté » au binôme.
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex("sessions_token_hash_idx").on(t.tokenHash), index("sessions_slot_idx").on(t.slotId)],

@@ -9,6 +9,10 @@ import { z } from "zod";
 import {
   applyCode,
   buildView,
+  CHAT_COOLDOWN_MS,
+  CHAT_KEEP,
+  normalizeChat,
+  type ChatMessage,
   claimDriver,
   denyHand,
   driverAbsentLongEnough,
@@ -36,7 +40,7 @@ import { deadlineFrom, portalOpenAt, PORTAL_LATEST_MS } from "@/engine/timeline"
 export class GradeRefused extends Error {}
 
 export type Member = { sessionId: string; name: string; gems: string[]; status: string; startedAt: Date | null };
-export type SlotInfo = { slotId: string; scenario: string; seed: bigint; t0: Date | null; members: Member[] };
+export type SlotInfo = { slotId: string; scenario: string; seed: bigint; t0: Date | null; members: Member[]; callUrl?: string | null };
 
 export type PersistedRoom = { code: string; epoch: number; driverSessionId: string | null; openedAt: Date | null; solvedAt: Date | null };
 
@@ -58,6 +62,8 @@ export interface PortalDeps {
   /** Valide le code dans le bac à sable (lève si le bac à sable est indisponible). */
   grade(info: SlotInfo, code: string, now: Date): Promise<GradeOutcome>;
   loadRoom(slotId: string): Promise<PersistedRoom | null>;
+  /** Derniers messages du chat de secours (relus du journal quand la salle est rechargée). */
+  loadChat?(slotId: string): Promise<ChatMessage[]>;
   saveRoom(slotId: string, patch: Partial<PersistedRoom>): Promise<void>;
   journal(sessionId: string, actor: Actor, events: JournalEvent[], at: Date): Promise<void>;
   log?(message: string, err?: unknown): void;
@@ -96,6 +102,9 @@ class LiveRoom {
   ended = false;
   lastActiveKey = "";
   lastCanTakeOver = false;
+  chat: ChatMessage[] = [];
+  chatSeq = 0;
+  lastChatAt = new Map<string, number>();
 
   constructor(
     public info: SlotInfo,
@@ -200,6 +209,8 @@ export class PortalHub {
         if (!fresh) return null;
         const persisted = await this.deps.loadRoom(slotId);
         const live = new LiveRoom(fresh, persisted, this.deps.stage(fresh).buggyCode);
+        live.chat = ((await this.deps.loadChat?.(slotId)) ?? []).slice(-CHAT_KEEP);
+        live.chatSeq = live.chat.reduce((m, c) => Math.max(m, c.id), 0);
         live.infoAt = this.deps.now().getTime();
         this.rooms.set(slotId, live);
         return live;
@@ -267,6 +278,7 @@ export class PortalHub {
     // Toute écriture est revérifiée côté serveur : rôle, époque, phase, taille.
     socket.on("code:update", (msg: unknown, ack?: unknown) => void this.guard(ack, () => this.onCode(live, sessionId, msg, ack)));
     socket.on("run", (_msg: unknown, ack?: unknown) => void this.guard(ack, () => this.onRun(live, sessionId, ack)));
+    socket.on("chat:send", (msg: unknown, ack?: unknown) => void this.guard(ack, () => this.onChat(live, sessionId, msg, ack)));
     socket.on("hand:request", (_m: unknown, ack?: unknown) => void this.guard(ack, () => this.onHand(live, sessionId, "request", ack)));
     socket.on("hand:grant", (_m: unknown, ack?: unknown) => void this.guard(ack, () => this.onHand(live, sessionId, "grant", ack)));
     socket.on("hand:deny", (_m: unknown, ack?: unknown) => void this.guard(ack, () => this.onHand(live, sessionId, "deny", ack)));
@@ -305,7 +317,7 @@ export class PortalHub {
     if (!resolved) return null;
     const players = live.info.members
       .filter((m) => m.status !== "expiree")
-      .map((m) => ({ id: m.sessionId, name: m.name, online: live.online.has(m.sessionId) }));
+      .map((m) => ({ id: m.sessionId, name: m.name, online: live.online.has(m.sessionId), gems: m.gems.length }));
     const driverOffline = live.core.driverId ? (live.offlineSince.get(live.core.driverId) ?? null) : null;
     return buildView({
       role: resolved,
@@ -320,6 +332,8 @@ export class PortalHub {
       opensByLatest: t0 ? new Date(t0.getTime() + PORTAL_LATEST_MS) : null,
       players,
       canTakeOver: driverAbsentLongEnough(driverOffline, now.getTime()),
+      callUrl: live.info.callUrl ?? null,
+      chat: live.chat,
     });
   }
 
@@ -478,6 +492,24 @@ export class PortalHub {
     } finally {
       live.running = false;
     }
+  }
+
+  /** Chat de secours : binôme seulement, limité en taille et en cadence, journalisé pour le replay. */
+  private async onChat(live: LiveRoom, sessionId: string, msg: unknown, ack: unknown) {
+    const now = this.deps.now();
+    if (this.phase(live) === "termine") return void reply(ack, { ok: false, reason: "termine" });
+    const members = live.info.members.filter((m) => m.status !== "expiree");
+    const me = members.find((m) => m.sessionId === sessionId);
+    if (!me || members.length < 2) return void reply(ack, { ok: false, reason: "pas-de-binome" });
+    const text = normalizeChat((msg as { text?: unknown } | null)?.text);
+    if (text === null) return void reply(ack, { ok: false, reason: "invalide" });
+    const last = live.lastChatAt.get(sessionId);
+    if (last !== undefined && now.getTime() - last < CHAT_COOLDOWN_MS) return void reply(ack, { ok: false, reason: "trop-tot" });
+    live.lastChatAt.set(sessionId, now.getTime());
+    live.chat = [...live.chat, { id: ++live.chatSeq, from: sessionId, name: me.name, text, at: now.toISOString() }].slice(-CHAT_KEEP);
+    await this.deps.journal(sessionId, "candidat", [{ type: "portail.chat", payload: { text } }], now);
+    this.emitState(live);
+    reply(ack, { ok: true });
   }
 
   private async onHand(live: LiveRoom, sessionId: string, action: "request" | "grant" | "deny" | "take", ack: unknown) {

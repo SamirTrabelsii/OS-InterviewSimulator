@@ -2,10 +2,33 @@
 
 import Link from "next/link";
 import { useCallback, useState, type ReactNode } from "react";
+import { STAGE_KIND } from "@/engine/stages";
 import { Hud, PixelLink, PixelPanel, type GemId, type Tone } from "@/ui/pixel/components";
 import { Drawer } from "@/ui/pixel/Drawer";
+import { DraftScope } from "./code-stage";
 import { Countdown } from "./Countdown";
 import { EventTracker } from "./EventTracker";
+
+const GEM_ORDER: GemId[] = ["quiz", "sql", "algo", "logique"];
+
+/** Message uniforme à chaque gemme obtenue : laquelle, ce qui reste, et la suite. */
+function GemObtained({ title, have, binome }: { title: string; have: GemId[]; binome: boolean }) {
+  const missing = GEM_ORDER.filter((g) => !have.includes(g));
+  return (
+    <div role="status">
+      <p className="px-read" style={{ margin: 0, fontWeight: 700 }}>
+        {title} : gemme obtenue !
+      </p>
+      <p className="px-read" style={{ margin: "0.5rem 0 0" }}>
+        {missing.length > 0
+          ? `Il vous reste ${missing.length} gemme${missing.length > 1 ? "s" : ""} : ${missing.map((g) => STAGE_KIND[g].subtitle).join(", ")}.`
+          : binome
+            ? "Vos 4 gemmes sont réunies. Retournez au quartier : le Portail s'ouvre dès que votre binôme a les siennes."
+            : "Vos 4 gemmes sont réunies. Retournez au quartier : le Portail s'ouvre."}
+      </p>
+    </div>
+  );
+}
 
 const TONE: Record<GemId, Tone> = { quiz: "cyan", sql: "green", algo: "magenta", logique: "amber" };
 
@@ -23,6 +46,7 @@ export function StageFrame({
   deadlineIso,
   serverNowIso,
   done,
+  binome = false,
   help,
   wide = false,
   children,
@@ -34,6 +58,8 @@ export function StageFrame({
   deadlineIso: string | null;
   serverNowIso: string;
   done: boolean;
+  /** Binôme : à 4 gemmes, il reste à attendre l'autre candidat. */
+  binome?: boolean;
   help?: ReactNode;
   wide?: boolean;
   children: ReactNode;
@@ -43,7 +69,7 @@ export function StageFrame({
   const tone = TONE[gem];
 
   return (
-    <>
+    <DraftScope.Provider value={deadlineIso ?? ""}>
       <div className={`px-stage ${wide ? "px-stage-wide" : ""}`}>
         <EventTracker stage={gem} />
         <Hud
@@ -62,9 +88,7 @@ export function StageFrame({
         </PixelPanel>
         {done ? (
           <PixelPanel tone="green" glow={1}>
-            <p className="px-read" style={{ margin: 0 }}>
-              Gemme obtenue.
-            </p>
+            <GemObtained title={title} have={gems} binome={binome} />
             <div className="px-actions">
               <PixelLink href="/session" variant="primary">
                 Retour au quartier
@@ -80,6 +104,6 @@ export function StageFrame({
           </Drawer>
         )}
       </div>
-    </>
+    </DraftScope.Provider>
   );
 }

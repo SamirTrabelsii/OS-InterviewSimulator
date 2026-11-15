@@ -40,6 +40,7 @@ export async function StageShell({
       deadlineIso={view.deadline ? view.deadline.toISOString() : null}
       serverNowIso={now.toISOString()}
       done={done}
+      binome={view.mode === "binome"}
       help={typeof help === "function" ? help({ content }) : help}
       wide={wide}
     >

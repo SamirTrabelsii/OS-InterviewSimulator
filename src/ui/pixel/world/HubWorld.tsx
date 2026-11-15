@@ -29,11 +29,15 @@ export interface HubStage {
   /** Titre de l'épreuve (vient du contenu public du scénario). */
   title: string;
   done: boolean;
+  /** Nature de l'épreuve (Quiz, SQL, Python, Logique), affichée sous le bâtiment. */
+  subtitle?: string;
 }
 
 export interface HubWorldProps {
   stages: HubStage[];
-  portal: { title: string; open: boolean };
+  portal: { title: string; open: boolean; /** État affiché tant que le Portail est fermé (ex. « en attente de votre binôme »). */ hint?: string };
+  /** Texte d'invite quand aucun bâtiment n'est proche (par défaut : « Marchez jusqu'à un bâtiment… »). */
+  idleHint?: string;
   /** Par défaut : navigation vers /session/<épreuve>. */
   onEnter?: (id: TargetId) => void;
   /** Force les animations réduites (sinon : préférence du système). */
@@ -65,7 +69,7 @@ const KEYS: Record<string, [number, number]> = {
   arrowdown: [0, 1], s: [0, 1],
 };
 
-export function HubWorld({ stages, portal, onEnter, reducedMotion }: HubWorldProps) {
+export function HubWorld({ stages, portal, idleHint, onEnter, reducedMotion }: HubWorldProps) {
   const router = useRouter();
   const sysReduced = useSyncExternalStore(subscribeMotion, systemReduced, () => false);
   const reduced = reducedMotion ?? sysReduced;
@@ -332,6 +336,16 @@ export function HubWorld({ stages, portal, onEnter, reducedMotion }: HubWorldPro
               >
                 {b.sign}
               </span>
+              {st?.subtitle && (
+                <span
+                  className="px-bldg-cap"
+                  data-done={done}
+                  style={{ left: b.rect.x * scale, top: (b.rect.y + b.rect.h) * scale, width: b.rect.w * scale }}
+                  aria-hidden
+                >
+                  {st.subtitle}
+                </span>
+              )}
               {done ? (
                 <div className="px-hit" style={{ ...box, pointerEvents: "none" }} role="img" aria-label={`${b.sign} : ${st?.title}, gemme obtenue`} />
               ) : (
@@ -351,7 +365,7 @@ export function HubWorld({ stages, portal, onEnter, reducedMotion }: HubWorldPro
           className="px-hit"
           style={{ left: PORTAL_RECT.x * scale, top: PORTAL_RECT.y * scale, width: PORTAL_RECT.w * scale, height: PORTAL_RECT.h * scale }}
           onClick={() => goToTarget("portail")}
-          aria-label={`${portal.title} : ${portal.open ? "ouvert" : "pas encore ouvert"}`}
+          aria-label={`${portal.title} : ${portal.open ? "ouvert" : (portal.hint ?? "pas encore ouvert")}`}
         />
       </div>
 
@@ -364,10 +378,10 @@ export function HubWorld({ stages, portal, onEnter, reducedMotion }: HubWorldPro
             <span className="px-read px-world-name">{nearName}</span>
           </>
         ) : (
-          <span className="px-read px-world-hint">Marchez jusqu&apos;à un bâtiment, ou cliquez dessus.</span>
+          <span className="px-read px-world-hint">{idleHint ?? "Marchez jusqu'à un bâtiment, ou cliquez dessus."}</span>
         )}
       </div>
-      <p className="px-world-keys">Flèches ou ZQSD pour marcher · Entrée pour entrer · ou cliquez sur la carte</p>
+      <p className="px-world-keys">Flèches, ZQSD ou WASD pour marcher · Entrée pour entrer · ou cliquez sur la carte</p>
     </div>
   );
 }

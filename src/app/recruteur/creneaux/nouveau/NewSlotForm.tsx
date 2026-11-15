@@ -13,6 +13,7 @@ export function NewSlotForm({ scenarios }: { scenarios: { id: string; label: str
   // Champs contrôlés : React vide un formulaire après chaque action, on
   // garde donc les valeurs saisies en cas d'erreur de validation.
   const [names, setNames] = useState(["", ""]);
+  const [callUrl, setCallUrl] = useState("");
   const setName = (i: number, v: string) => setNames((n) => n.map((x, j) => (j === i ? v : x)));
 
   if (state.status === "ok") {
@@ -80,6 +81,22 @@ export function NewSlotForm({ scenarios }: { scenarios: { id: string; label: str
           <label className="fm-field">
             <span className="rc-label">Candidat 2</span>
             <input name="candidate" required placeholder="Prénom Nom" value={names[1]} onChange={(e) => setName(1, e.target.value)} className="rv-input" />
+          </label>
+        )}
+
+        {mode === "binome" && (
+          <label className="fm-field">
+            <span className="rc-label">Lien de l&apos;appel (Teams, Meet…) — facultatif</span>
+            <input
+              name="callUrl"
+              type="url"
+              inputMode="url"
+              placeholder="https://teams.microsoft.com/…"
+              value={callUrl}
+              onChange={(e) => setCallUrl(e.target.value)}
+              className="rv-input"
+            />
+            <span className="px-muted">Affiché aux candidats sur l&apos;accueil et dans le Portail, pour qu&apos;ils puissent se parler.</span>
           </label>
         )}
 

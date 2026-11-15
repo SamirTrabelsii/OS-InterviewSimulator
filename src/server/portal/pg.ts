@@ -1,4 +1,5 @@
-import { eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
+import { CHAT_KEEP, type ChatMessage } from "@/engine/portal";
 import { cookieValue } from "./cookies";
 import * as schema from "@/server/db/schema";
 import type { Db } from "@/server/slots/service";
@@ -27,7 +28,21 @@ export async function loadSlotInfo(db: Db, slotId: string): Promise<SlotInfo | n
   const members: Member[] = rows.map((r) => ({ sessionId: r.sessionId, name: r.name, gems: r.gems, status: r.status, startedAt: r.startedAt }));
   // Même graine pour les deux candidats d'un binôme ? Non : chaque session a la sienne.
   // L'énigme du Portail est commune : elle dérive de la graine de la 1re session.
-  return { slotId, scenario: slot.scenario, seed: rows[0].seed, t0: slot.startedAt, members };
+  return { slotId, scenario: slot.scenario, seed: rows[0].seed, t0: slot.startedAt, members, callUrl: slot.callUrl };
+}
+
+/** Derniers messages du chat de secours du créneau, relus du journal (les plus anciens d'abord). */
+export async function loadChat(db: Db, slotId: string): Promise<ChatMessage[]> {
+  const rows = await db
+    .select({ from: schema.events.sessionId, name: schema.sessions.candidateName, ts: schema.events.ts, payload: schema.events.payload })
+    .from(schema.events)
+    .innerJoin(schema.sessions, eq(schema.sessions.id, schema.events.sessionId))
+    .where(and(eq(schema.sessions.slotId, slotId), eq(schema.events.type, "portail.chat")))
+    .orderBy(desc(schema.events.ts), desc(schema.events.id))
+    .limit(CHAT_KEEP);
+  return rows
+    .reverse()
+    .map((r, i) => ({ id: i + 1, from: r.from, name: r.name, text: String((r.payload as { text?: unknown }).text ?? ""), at: r.ts.toISOString() }));
 }
 
 export async function loadSlotInfoOfSession(db: Db, sessionId: string): Promise<SlotInfo | null> {

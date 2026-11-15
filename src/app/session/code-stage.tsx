@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type MutableRefObject } from "react";
 import { PixelStatus } from "@/ui/pixel/components";
 import { trackEvent } from "./EventTracker";
 
@@ -31,6 +31,73 @@ export function useCodeSnapshots(stage: string, initial: string) {
   }, [stage]);
 
   return code;
+}
+
+/** Identifie la session dans la clé du brouillon (échéance unique par candidat), fourni par le cadre d'épreuve. */
+export const DraftScope = createContext("");
+
+const DRAFT_SAVE_DELAY_MS = 800;
+
+/**
+ * Sauvegarde automatique du code dans ce navigateur : un rechargement, une
+ * coupure ou un retour depuis le quartier ne font pas perdre le travail.
+ * `initial` reste null le temps de lire le brouillon (l'éditeur attend).
+ */
+export function useDraft(stage: string, starter: string, codeRef: MutableRefObject<string>) {
+  const scope = useContext(DraftScope);
+  const key = `draft.${stage}.${scope}`;
+  const [initial, setInitial] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let value = starter;
+    try {
+      value = localStorage.getItem(key) ?? starter;
+    } catch {
+      /* stockage indisponible : on repart du code de départ */
+    }
+    codeRef.current = value;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture du brouillon côté navigateur uniquement
+    setInitial(value);
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [key, starter, codeRef]);
+
+  const onChange = useCallback(
+    (value: string) => {
+      codeRef.current = value;
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => {
+        try {
+          localStorage.setItem(key, value);
+          setSavedAt(Date.now());
+        } catch {
+          /* quota ou navigation privée : tant pis, le replay garde le code */
+        }
+      }, DRAFT_SAVE_DELAY_MS);
+    },
+    [key, codeRef],
+  );
+
+  return { initial, onChange, savedAt };
+}
+
+/** Mention discrète sous l'éditeur : le brouillon est sauvegardé tout seul. */
+export function DraftNote({ savedAt }: { savedAt: number | null }) {
+  return (
+    <p className="px-muted" style={{ margin: 0 }} aria-live="off">
+      {savedAt
+        ? `Brouillon enregistré à ${new Date(savedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} — votre code est sauvegardé automatiquement.`
+        : "Votre code est sauvegardé automatiquement dans ce navigateur."}
+    </p>
+  );
+}
+
+/** Zone réservée pendant la lecture du brouillon (évite un saut de mise en page). */
+export function EditorPlaceholder({ height }: { height: number }) {
+  return <div className="px-editor px-edge" style={{ height }} aria-busy="true" />;
 }
 
 /** Réponse du serveur à une soumission SQL ou Algo (voir CodeResponse). */
@@ -94,11 +161,14 @@ export function SubmissionStatus({ result, message, what }: { result: CodeResult
         {what} : {result.passed} / {result.total}
         {result.ok ? " — gemme obtenue !" : ""}
       </p>
-      {result.error && (
-        <p>
-          <code>{result.error}</code>
-        </p>
-      )}
+      {result.error &&
+        (result.error.startsWith("Colonnes inattendues") ? (
+          <p>{result.error}</p>
+        ) : (
+          <p>
+            <code>{result.error}</code>
+          </p>
+        ))}
     </PixelStatus>
   );
 }

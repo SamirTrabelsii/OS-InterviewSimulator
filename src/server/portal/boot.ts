@@ -38,6 +38,7 @@ export function realDeps(): PortalDeps {
       }
     },
     loadRoom: (id) => pg.loadRoom(d, id),
+    loadChat: (id) => pg.loadChat(d, id),
     saveRoom: (id, patch) => pg.saveRoom(d, id, patch),
     journal: pg.journal(d),
   };

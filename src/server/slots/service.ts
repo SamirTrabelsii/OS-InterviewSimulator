@@ -6,6 +6,15 @@ import { newCandidateToken, newSeed } from "@/server/tokens";
 
 export type Db = NodePgDatabase<typeof schema>;
 
+function isHttpUrl(v: string): boolean {
+  try {
+    const u = new URL(v);
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 export const createSlotInput = z
   .object({
     scenario: z.string({ error: "Scénario requis." }).min(1, "Scénario requis."),
@@ -19,6 +28,14 @@ export const createSlotInput = z
       .array(z.string().trim().min(1, "Nom du candidat requis.").max(120, "Nom trop long."))
       .min(1, "Nom du candidat requis.")
       .max(2),
+    /** Lien de l'appel du binôme (Teams, Meet…) : optionnel, http(s) seulement. */
+    callUrl: z
+      .string()
+      .trim()
+      .max(500, "Lien de l'appel trop long.")
+      .optional()
+      .transform((v) => (v ? v : undefined))
+      .refine((v) => v === undefined || isHttpUrl(v), "Le lien de l'appel doit commencer par https://"),
   })
   .refine((v) => v.candidates.length === (v.mode === "solo" ? 1 : 2), {
     message: "Un créneau solo a 1 candidat, un binôme en a 2.",
@@ -44,7 +61,7 @@ export async function createSlot(
   return db.transaction(async (tx) => {
     const [slot] = await tx
       .insert(schema.slots)
-      .values({ scenario: input.scenario, mode: input.mode, scheduledAt: input.scheduledAt, createdBy: recruiterEmail })
+      .values({ scenario: input.scenario, mode: input.mode, scheduledAt: input.scheduledAt, createdBy: recruiterEmail, callUrl: input.mode === "binome" ? (input.callUrl ?? null) : null })
       .returning({ id: schema.slots.id });
 
     const links: CandidateLink[] = [];

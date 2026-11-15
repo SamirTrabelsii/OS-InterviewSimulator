@@ -36,7 +36,15 @@ export function EventTracker({ stage }: { stage: string }) {
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pagehide", onHide);
     const id = setInterval(() => flush(), 3000);
+    // Battement : le binôme voit « connecté » tant qu'il arrive (hors replay).
+    const beat = () => {
+      // Même onglet masqué : consulter la documentation autorisée ne rend pas « hors ligne ».
+      fetch("/api/session/heartbeat", { method: "POST", keepalive: true }).catch(() => {});
+    };
+    beat();
+    const beatId = setInterval(beat, 15_000);
     return () => {
+      clearInterval(beatId);
       trackEvent("stage.leave", { stage });
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", onHide);

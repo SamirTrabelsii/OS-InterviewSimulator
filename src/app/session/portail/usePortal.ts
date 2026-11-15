@@ -18,6 +18,7 @@ const REASONS: Record<string, string> = {
   "pilote-present": "Le pilote est toujours connecté.",
   "deja-demandee": "Une demande est déjà en cours.",
   epoque: "Les rôles viennent de changer.",
+  "pas-de-binome": "Le chat n'existe qu'en binôme.",
 };
 export const reasonText = (a: Ack) => a.message ?? REASONS[a.reason ?? ""] ?? "Action impossible pour le moment.";
 

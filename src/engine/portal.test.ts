@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   applyCode,
   buildView,
+  CHAT_MAX_LEN,
   claimDriver,
   denyHand,
   DRIVER_ABSENT_TAKEOVER_MS,
   expireRequest,
   grantHand,
+  normalizeChat,
   HAND_REQUEST_COOLDOWN_MS,
   HAND_REQUEST_TTL_MS,
   portalPhase,
@@ -172,7 +174,7 @@ describe("vues asymétriques", () => {
     const json = JSON.stringify(v);
     for (const secret of ["CONTEXTE-CLIENT", "LOG-INITIAL", "RUN-DU-PILOTE", "ENONCE-DU-TICKET"]) expect(json).not.toContain(secret);
     expect(v.logs).toBeUndefined();
-    expect(v.partner).toEqual({ name: "Bo", online: false });
+    expect(v.partner).toEqual({ name: "Bo", online: false, gems: 0 });
   });
 
   it("le copilote voit logs, contexte, énoncé et exemples, jamais le code", () => {
@@ -217,5 +219,45 @@ describe("vues asymétriques", () => {
     expect(v.code).toBeUndefined();
     expect(v.logs).toBeUndefined();
     expect(v.clientContext).toBeUndefined();
+  });
+});
+
+describe("chat de secours", () => {
+  it("nettoie et borne les messages", () => {
+    expect(normalizeChat("  a \n  b  ")).toBe("a b");
+    expect(normalizeChat("   ")).toBeNull();
+    expect(normalizeChat(12)).toBeNull();
+    expect(normalizeChat("x".repeat(CHAT_MAX_LEN + 50))).toHaveLength(CHAT_MAX_LEN);
+  });
+
+  it("la vue contient le chat (avec « mine »), le lien de l'appel et les gemmes du binôme ; rien en solo", () => {
+    const now = new Date("2026-12-01T09:20:00Z");
+    const players = [
+      { id: A, name: "Ana", online: true, gems: 4 },
+      { id: B, name: "Bo", online: true, gems: 2 },
+    ];
+    const base = {
+      viewer: A,
+      room: { code: "x", epoch: 1, driverId: A, request: null, solved: false },
+      stage: { title: "t", story: "s", statement: "", signature: { functionName: "f", params: [] }, buggyCode: "", examples: [], logs: [], clientContext: "" } as PortalStage,
+      runLogs: [],
+      result: null,
+      phase: "ferme" as const,
+      now,
+      deadline: now,
+      opensByLatest: now,
+      players,
+      canTakeOver: false,
+      callUrl: "https://teams.example/appel",
+      chat: [
+        { id: 1, from: A, name: "Ana", text: "salut", at: now.toISOString() },
+        { id: 2, from: B, name: "Bo", text: "coucou", at: now.toISOString() },
+      ],
+    };
+    const v = buildView({ ...base, role: "pilote" });
+    expect(v.callUrl).toBe("https://teams.example/appel");
+    expect(v.partner).toEqual({ name: "Bo", online: true, gems: 2 });
+    expect(v.chat?.map((m) => m.mine)).toEqual([true, false]);
+    expect(buildView({ ...base, role: "solo", players: [players[0]] }).chat).toBeNull();
   });
 });

@@ -243,6 +243,9 @@ export function timeline(events: readonly ReplayEvent[]): Marker[] {
       case "portail.main.prise":
         add("portail", "Main prise");
         break;
+      case "portail.chat":
+        add("portail", "Message au binôme", str(p.text)?.slice(0, 120) ?? undefined);
+        break;
       case "portail.solo":
         add("portail", "Repli solo par le recruteur");
         break;

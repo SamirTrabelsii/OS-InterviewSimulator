@@ -28,6 +28,10 @@ export default function SqlPage() {
             <div className="px-stack">
               <PixelPanel tone="green" title="Mission">
                 <p className="px-read px-story">{stage.task}</p>
+                <p className="px-read" style={{ margin: "0.75rem 0 0" }}>
+                  <strong>Colonnes à renvoyer, dans cet ordre :</strong> <code className="px-code">{stage.expectedColumns.join(", ")}</code>
+                  <span className="px-muted"> (renommez avec AS si besoin).</span>
+                </p>
               </PixelPanel>
 
               <SqlWorkbench dataset={stage.dataset} />

@@ -32,8 +32,7 @@ export function LogiqueForm({ answerFormat, answerPattern }: { answerFormat: str
     const body = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; retryAfterMs?: number };
     setPending(false);
     if (res.ok && body.ok) {
-      router.push("/session");
-      router.refresh();
+      router.refresh(); // reste sur la page : « Gemme obtenue » s'affiche
       return;
     }
     if (body.retryAfterMs) {

@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import type { SqlDataset } from "@/engine/content/schemas";
 import { datasetToSql } from "@/engine/sql/setup";
 import { CodeEditor } from "../CodeEditor";
-import { SubmissionStatus, useCodeSnapshots, useSubmission } from "../code-stage";
+import { DraftNote, EditorPlaceholder, SubmissionStatus, useCodeSnapshots, useDraft, useSubmission } from "../code-stage";
 import { trackEvent } from "../EventTracker";
 import { PixelButton, PixelPanel, PixelStatus } from "@/ui/pixel/components";
 
@@ -43,6 +43,7 @@ const cell = (v: unknown) => (v === null ? "NULL" : String(v));
 export function SqlWorkbench({ dataset }: { dataset: SqlDataset }) {
   const setup = useMemo(() => datasetToSql(dataset), [dataset]);
   const codeRef = useCodeSnapshots("sql", STARTER);
+  const draft = useDraft("sql", STARTER, codeRef);
   const [running, setRunning] = useState(false);
   const [run, setRun] = useState<RunResult | null>(null);
   const runningRef = useRef(false);
@@ -68,7 +69,11 @@ export function SqlWorkbench({ dataset }: { dataset: SqlDataset }) {
   return (
     <div className="px-stack">
       <PixelPanel tone="green" title="Votre requête">
-        <CodeEditor night language="sql" initialValue={STARTER} onChange={(v) => (codeRef.current = v)} onRun={() => void execute()} label="Requête SQL" />
+        {draft.initial === null ? (
+          <EditorPlaceholder height={280} />
+        ) : (
+          <CodeEditor night language="sql" initialValue={draft.initial} onChange={draft.onChange} onRun={() => void execute()} label="Requête SQL" />
+        )}
         <div className="px-actions">
           <PixelButton variant="primary" onClick={() => void submit({ query: codeRef.current })} disabled={pending || waitSeconds > 0}>
             {waitSeconds > 0 ? `Patientez ${waitSeconds} s` : pending ? "Vérification…" : "Soumettre"}
@@ -77,6 +82,7 @@ export function SqlWorkbench({ dataset }: { dataset: SqlDataset }) {
             {running ? "Exécution…" : "Exécuter"}
           </PixelButton>
         </div>
+        <DraftNote savedAt={draft.savedAt} />
       </PixelPanel>
 
       <SubmissionStatus result={result} message={message} what="Vérifications réussies" />

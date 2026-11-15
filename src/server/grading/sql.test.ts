@@ -7,7 +7,7 @@ import { scenarios } from "@content/index";
 import { SandboxPool } from "@/server/sandbox/pool";
 import { runReferenceSql } from "./reference-sql";
 import { datasetToSql } from "@/engine/sql/setup";
-import { gradeSql } from "./sql";
+import { columnsMessage, gradeSql } from "./sql";
 
 vi.setConfig({ testTimeout: 120_000 });
 
@@ -38,6 +38,17 @@ describe.each(scenarios.map((s) => [s.meta.id, s] as const))("validateur SQL —
 
     const unordered = { ...stage, private: { ...stage.private, orderMatters: false } };
     expect(await gradeSql(unordered, reversed, run)).toMatchObject({ passed: 2, total: 2 });
+  });
+
+  it("bonne logique mais colonnes mal nommées → 0 / 2 avec un message « colonnes inattendues » qui cite celles de l'énoncé", async () => {
+    const [first, ...rest] = stage.public.expectedColumns;
+    const renamed = `SELECT ${first} AS id_boutique, ${rest.join(", ")} FROM (${solution})`;
+    const g = await gradeSql(stage, renamed, run);
+    expect(g.passed).toBe(0);
+    expect(g.checks.map((c) => c.reason)).toEqual(["colonnes", "colonnes"]);
+    expect(g.error).toBe(columnsMessage(stage.public.expectedColumns));
+    expect(g.error).toMatch(/^Colonnes inattendues/);
+    for (const c of stage.public.expectedColumns) expect(g.error).toContain(c);
   });
 
   it("requête codée en dur sur le jeu visible → échoue sur le jeu caché (1 / 2)", async () => {

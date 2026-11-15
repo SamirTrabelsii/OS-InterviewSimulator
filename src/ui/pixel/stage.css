@@ -398,3 +398,146 @@
   display: block;
   color: var(--c-text-dim);
 }
+
+/* Accueil : sous-liste des 4 épreuves */
+.px-rules .px-rules-sub {
+  list-style: none;
+  margin-top: calc(var(--px) * 2);
+}
+.px-rules-sub ul {
+  margin: 0;
+  padding-left: 1rem;
+  line-height: 1.6;
+}
+
+/* Quartier : nature de l'épreuve sous chaque bâtiment, état du Portail et du binôme */
+.px-bldg-cap {
+  position: absolute;
+  text-align: center;
+  font-family: var(--f-read);
+  font-size: max(0.75rem, calc(var(--wpx) * 5));
+  line-height: 1.2;
+  color: var(--c-text-dim);
+  pointer-events: none;
+}
+.px-bldg-cap[data-done="true"] {
+  color: var(--c-text-mute);
+}
+.px-hub-status {
+  margin: 0;
+  text-align: center;
+  font-family: var(--f-read);
+  line-height: 1.6;
+}
+
+/* Rappels de temps (10 et 5 minutes, fin) */
+.px-timebanner {
+  position: fixed;
+  top: calc(var(--px) * 3);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 4);
+  max-width: min(42rem, calc(100vw - 1.5rem));
+  padding: calc(var(--px) * 4) calc(var(--px) * 5);
+  background: var(--c-surface-3);
+  color: var(--c-text);
+  font-family: var(--f-read);
+  line-height: 1.5;
+  box-shadow: 0 0 0 calc(var(--px) * 1) var(--c-amber);
+}
+.px-timebanner[data-level="5"],
+.px-timebanner[data-level="0"] {
+  box-shadow: 0 0 0 calc(var(--px) * 1) var(--c-magenta, var(--c-amber));
+}
+.px-timebanner-close {
+  flex: none;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 calc(var(--px) * 2);
+}
+
+/* Chat de secours du Portail */
+.px-chat {
+  list-style: none;
+  margin: 0 0 calc(var(--px) * 3);
+  padding: calc(var(--px) * 3);
+  max-height: 14rem;
+  overflow-y: auto;
+  background: var(--c-bg-0);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--px) * 3);
+  font-family: var(--f-read);
+}
+.px-chat li {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+}
+.px-chat li[data-mine="true"] {
+  align-self: flex-end;
+  text-align: right;
+}
+.px-chat-who {
+  font-size: 0.8125rem;
+  color: var(--c-text-mute);
+}
+.px-chat-text {
+  overflow-wrap: anywhere;
+  color: var(--c-text);
+}
+.px-chat-form {
+  display: flex;
+  gap: calc(var(--px) * 3);
+  align-items: stretch;
+}
+.px-chat-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--c-bg-0);
+  color: var(--c-text);
+  border: 0;
+  box-shadow: 0 0 0 var(--px) var(--c-line-3);
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
+  font-family: var(--f-read);
+  font-size: 1rem;
+}
+.px-chat-input:focus-visible {
+  outline: calc(var(--px) * 2) solid var(--c-amber);
+  outline-offset: calc(var(--px) * 2);
+}
+
+/* Attente d'une connexion ou d'un chargement */
+.px-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--px) * 4);
+  min-height: 40vh;
+  text-align: center;
+}
+.px-spinner {
+  width: calc(var(--px) * 10);
+  height: calc(var(--px) * 10);
+  box-shadow: inset 0 0 0 calc(var(--px) * 2) var(--c-line-3);
+  border-top: calc(var(--px) * 2) solid var(--c-cyan);
+  animation: px-spin 0.9s steps(8) infinite;
+}
+@keyframes px-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .px-spinner {
+    animation: none;
+  }
+}

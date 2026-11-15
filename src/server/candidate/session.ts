@@ -1,5 +1,5 @@
 import { and, eq, ne, sql } from "drizzle-orm";
-import { canStart, canSubmit, deadlineFrom, linkIsOpen, phaseAt, portalOpenAt, type Phase } from "@/engine/timeline";
+import { canStart, canSubmit, deadlineFrom, isOnline, linkIsOpen, phaseAt, portalOpenAt, type Phase } from "@/engine/timeline";
 import * as schema from "@/server/db/schema";
 import type { Db } from "@/server/slots/service";
 import { hashToken } from "@/server/tokens";
@@ -94,6 +94,12 @@ export type CandidateView = {
   retired: boolean;
   /** Le Portail du créneau a été franchi (déjà montré au candidat dans l'écran du Portail). */
   portalSolved: boolean;
+  /** T0 du créneau s'il a déjà démarré (le binôme a cliqué), même si ce candidat n'a pas encore commencé. */
+  slotT0: Date | null;
+  /** Lien de l'appel du binôme (saisi par le recruteur), sinon null. */
+  callUrl: string | null;
+  /** Binôme actif : prénom, gemmes obtenues, connexion récente. Null en solo. */
+  partner: { name: string; gems: number; online: boolean; started: boolean } | null;
 };
 
 export async function loadCandidateView(db: Db, sessionId: string, now: Date): Promise<CandidateView | null> {
@@ -107,7 +113,12 @@ export async function loadCandidateView(db: Db, sessionId: string, now: Date): P
   const { session, slot } = row;
 
   const partners = await db
-    .select({ gems: schema.sessions.gems })
+    .select({
+      gems: schema.sessions.gems,
+      name: schema.sessions.candidateName,
+      lastSeenAt: schema.sessions.lastSeenAt,
+      startedAt: schema.sessions.startedAt,
+    })
     .from(schema.sessions)
     .where(
       and(
@@ -151,6 +162,17 @@ export async function loadCandidateView(db: Db, sessionId: string, now: Date): P
     phase: session.status === "expiree" ? "termine" : phaseAt(t0, [session.gems, ...partners.map((p) => p.gems)], now),
     retired: session.status === "expiree",
     portalSolved: room?.solvedAt != null,
+    slotT0: slot.startedAt,
+    callUrl: slot.mode === "binome" ? slot.callUrl : null,
+    partner:
+      slot.mode === "binome" && partners[0]
+        ? {
+            name: partners[0].name.split(/\s+/)[0] ?? partners[0].name,
+            gems: partners[0].gems.length,
+            online: isOnline(partners[0].lastSeenAt, now),
+            started: partners[0].startedAt !== null,
+          }
+        : null,
     canStartNow: !session.startedAt && canStart(slot.scheduledAt, now) && (!slot.startedAt || now < deadlineFrom(slot.startedAt)),
   };
 }
