@@ -559,3 +559,25 @@
   letter-spacing: 0.08em;
   color: var(--c-danger);
 }
+
+/* Décor d'intérieur : derrière tout, jamais sous le doigt ni sous la lecture. */
+.px-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-bg-1);
+}
+.px-backdrop canvas {
+  flex: none;
+  image-rendering: pixelated;
+}
+.px-stage,
+.px-stack {
+  position: relative;
+  z-index: 1;
+}

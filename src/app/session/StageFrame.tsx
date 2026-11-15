@@ -5,6 +5,8 @@ import { useCallback, useState, type ReactNode } from "react";
 import { STAGE_KIND } from "@/engine/stages";
 import { Hud, PixelLink, PixelPanel, type GemId, type Tone } from "@/ui/pixel/components";
 import { Drawer } from "@/ui/pixel/Drawer";
+import { Backdrop } from "@/ui/pixel/world/Backdrop";
+import type { InteriorId } from "@/ui/pixel/world/art/interiors";
 import { DraftScope } from "./code-stage";
 import { Countdown } from "./Countdown";
 import { EventTracker } from "./EventTracker";
@@ -30,6 +32,8 @@ function GemObtained({ title, have, binome }: { title: string; have: GemId[]; bi
   );
 }
 
+/** Chaque épreuve se passe dans son bâtiment du quartier. */
+const INTERIOR: Record<GemId, InteriorId> = { quiz: "savoir", sql: "archives", algo: "calcul", logique: "intuition" };
 const TONE: Record<GemId, Tone> = { quiz: "cyan", sql: "green", algo: "magenta", logique: "amber" };
 
 /**
@@ -67,9 +71,11 @@ export function StageFrame({
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   const tone = TONE[gem];
+  const interior = INTERIOR[gem];
 
   return (
     <DraftScope.Provider value={deadlineIso ?? ""}>
+      <Backdrop id={interior} />
       <div className={`px-stage ${wide ? "px-stage-wide" : ""}`}>
         <EventTracker stage={gem} />
         <Hud

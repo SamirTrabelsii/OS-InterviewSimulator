@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { IH, IW, INTERIOR_IDS, makeInterior } from "./interiors";
 import { BH, BUILDING_IDS, BW } from "./buildings";
 import { PACKED, COLORS } from "./palette";
 import { getArt } from "./index";
@@ -76,4 +77,19 @@ describe("planche de sprites du hub", () => {
     expect(again).toBe(art);
     expect(allPix().map(([, p]) => p.signature())).toEqual(a);
   });
+});
+
+describe("décors d'intérieur", () => {
+  const palette = new Set(Object.values(PACKED));
+  for (const id of INTERIOR_IDS) {
+    it(`${id} : pleine image, palette fermée, sombre`, () => {
+      const p = makeInterior(id);
+      expect([p.w, p.h]).toEqual([IW, IH]);
+      for (const v of p.used()) expect(palette.has(v)).toBe(true);
+      expect(p.buf.every((v) => v !== 0)).toBe(true); // aucun trou
+      // sombre et discret : très peu de pixels clairs (derrière l'énoncé et le code)
+      const bright = [...p.buf].filter((v) => ((v & 255) + ((v >> 8) & 255) + ((v >> 16) & 255)) / 3 > 150).length;
+      expect(bright / p.buf.length).toBeLessThan(0.01);
+    });
+  }
 });

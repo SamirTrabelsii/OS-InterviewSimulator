@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { currentCandidate } from "@/server/candidate/current";
 import { loadPublicInstance } from "@/server/content/registry";
+import { Backdrop } from "@/ui/pixel/world/Backdrop";
 import { StageLoading } from "../StageLoading";
 import { PortalClient } from "./PortalClient";
 
@@ -20,6 +21,7 @@ export default function PortailPage() {
   return (
     <Suspense fallback={<StageLoading />}>
       <div className="px-stage px-stage-wide">
+        <Backdrop id="portail" />
         <PortailScreen />
       </div>
     </Suspense>
