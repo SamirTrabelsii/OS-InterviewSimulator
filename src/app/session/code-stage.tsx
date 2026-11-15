@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { PixelStatus } from "@/ui/pixel/components";
 import { trackEvent } from "./EventTracker";
 
 /** Taille maximale d'un instantané (le journal refuse les événements > 16 Ko). */
@@ -81,24 +82,23 @@ export function useSubmission(url: string) {
 export function SubmissionStatus({ result, message, what }: { result: CodeResult | null; message: string | null; what: string }) {
   if (message) {
     return (
-      <p role="status" className="text-sm text-amber-700 dark:text-amber-300">
-        {message}
-      </p>
+      <PixelStatus tone="warn">
+        <p>{message}</p>
+      </PixelStatus>
     );
   }
   if (!result) return null;
   return (
-    <div
-      role="status"
-      className={`rounded-md px-4 py-3 text-sm ${
-        result.ok ? "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200" : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
-      }`}
-    >
-      <p className="font-medium">
+    <PixelStatus tone={result.ok ? "ok" : "neutral"}>
+      <p className="px-status-title">
         {what} : {result.passed} / {result.total}
         {result.ok ? " — gemme obtenue !" : ""}
       </p>
-      {result.error && <p className="mt-1 font-mono text-xs">{result.error}</p>}
-    </div>
+      {result.error && (
+        <p>
+          <code>{result.error}</code>
+        </p>
+      )}
+    </PixelStatus>
   );
 }

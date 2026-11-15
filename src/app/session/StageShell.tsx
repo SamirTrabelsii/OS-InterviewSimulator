@@ -1,22 +1,27 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import type { GemId } from "@/engine/timeline";
+import { GEM_IDS } from "@/engine/timeline";
 import { currentCandidate } from "@/server/candidate/current";
 import { loadPublicInstance } from "@/server/content/registry";
 import type { PublicInstance } from "@/engine/content/schemas";
-import { Countdown } from "./Countdown";
-import { EventTracker } from "./EventTracker";
+import { StageFrame } from "./StageFrame";
 
 /**
  * Cadre commun d'une épreuve : vérifie la session, n'utilise que le
- * contenu PUBLIC, affiche le chrono et un retour au hub.
+ * contenu PUBLIC, et délègue l'affichage à StageFrame (HUD, titre, énoncé,
+ * tiroir d'aide). `children` ne reçoit que le contenu public.
  */
 export async function StageShell({
   gem,
+  help,
+  wide,
   children,
 }: {
   gem: GemId;
+  /** Contenu du tiroir d'aide (règles de l'épreuve). Jamais de solution ni d'indice caché. */
+  help?: ReactNode | ((ctx: { content: PublicInstance }) => ReactNode);
+  wide?: boolean;
   children: (ctx: { content: PublicInstance; done: boolean }) => ReactNode;
 }) {
   const candidate = await currentCandidate();
@@ -27,26 +32,18 @@ export async function StageShell({
   const content = loadPublicInstance(view.scenarioId, view.seed);
   const done = view.gems.includes(gem);
   return (
-    <section className="space-y-6">
-      <EventTracker stage={gem} />
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <Link href="/session" className="text-sm underline">
-          ← Retour aux gemmes
-        </Link>
-        {view.deadline && <Countdown deadlineIso={view.deadline.toISOString()} serverNowIso={now.toISOString()} />}
-      </header>
-      <h1 className="text-2xl font-semibold">{content.stages[gem].title}</h1>
-      <p className="text-lg leading-relaxed text-zinc-700 dark:text-zinc-300">{content.stages[gem].story}</p>
-      {done ? (
-        <p className="rounded-md bg-green-50 px-4 py-3 text-green-800 dark:bg-green-950 dark:text-green-200">
-          Gemme obtenue.{" "}
-          <Link href="/session" className="underline">
-            Retour aux gemmes
-          </Link>
-        </p>
-      ) : (
-        children({ content, done })
-      )}
-    </section>
+    <StageFrame
+      gem={gem}
+      title={content.stages[gem].title}
+      story={content.stages[gem].story}
+      gems={GEM_IDS.filter((g) => view.gems.includes(g))}
+      deadlineIso={view.deadline ? view.deadline.toISOString() : null}
+      serverNowIso={now.toISOString()}
+      done={done}
+      help={typeof help === "function" ? help({ content }) : help}
+      wide={wide}
+    >
+      {children({ content, done })}
+    </StageFrame>
   );
 }

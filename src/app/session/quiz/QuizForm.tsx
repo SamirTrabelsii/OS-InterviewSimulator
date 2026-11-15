@@ -2,16 +2,23 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PixelBar, PixelButton, PixelPanel, PixelStatus } from "@/ui/pixel/components";
 import { trackEvent } from "../EventTracker";
 
 type Question = { id: string; prompt: string; choices: { id: string; label: string }[] };
 
+/** Une question par écran ; un seul bouton principal (Suivant, puis Valider). */
 export function QuizForm({ questions }: { questions: Question[] }) {
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [index, setIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const complete = questions.every((q) => answers[q.id]);
+
+  const q = questions[index];
+  const last = index === questions.length - 1;
+  const answered = Boolean(answers[q.id]);
+  const complete = questions.every((x) => answers[x.id]);
 
   async function submit() {
     if (!confirm("Valider vos réponses ? Une seule validation est possible.")) return;
@@ -35,18 +42,22 @@ export function QuizForm({ questions }: { questions: Question[] }) {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        void submit();
+        if (!last) setIndex((i) => i + 1);
+        else if (complete) void submit();
       }}
-      className="space-y-6"
+      className="px-stack"
     >
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">Une seule validation possible : relisez-vous avant de valider.</p>
-      {questions.map((q, i) => (
-        <fieldset key={q.id} className="space-y-2 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-          <legend className="px-1 font-medium">
-            {i + 1}. {q.prompt}
+      <p className="px-stepper-label" aria-live="polite">
+        Question {index + 1} sur {questions.length}
+      </p>
+      <PixelBar value={(index + 1) / questions.length} segments={questions.length} label="Avancement du quiz" />
+      <PixelPanel tone="cyan">
+        <fieldset className="px-choices" key={q.id}>
+          <legend className="px-read" style={{ fontWeight: 700, marginBottom: "0.75rem" }}>
+            {q.prompt}
           </legend>
           {q.choices.map((c) => (
-            <label key={c.id} className="flex cursor-pointer items-start gap-2 rounded px-2 py-1 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+            <label key={c.id} className="px-choice">
               <input
                 type="radio"
                 name={q.id}
@@ -56,24 +67,23 @@ export function QuizForm({ questions }: { questions: Question[] }) {
                   setAnswers((a) => ({ ...a, [q.id]: c.id }));
                   trackEvent("answer.change", { stage: "quiz", question: q.id, choice: c.id });
                 }}
-                className="mt-1"
               />
               <span>{c.label}</span>
             </label>
           ))}
         </fieldset>
-      ))}
-      {error && (
-        <p role="alert" className="text-sm text-red-700 dark:text-red-400">
-          {error}
-        </p>
-      )}
-      <button
-        disabled={!complete || pending}
-        className="rounded-md bg-indigo-600 px-5 py-2 font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {pending ? "Validation…" : "Valider mes réponses"}
-      </button>
+      </PixelPanel>
+      {error && <PixelStatus tone="bad">{error}</PixelStatus>}
+      <div className="px-actions">
+        {index > 0 && (
+          <PixelButton variant="ghost" onClick={() => setIndex((i) => i - 1)} disabled={pending}>
+            ← Précédente
+          </PixelButton>
+        )}
+        <PixelButton type="submit" variant="primary" disabled={!answered || pending || (last && !complete)}>
+          {last ? (pending ? "Validation…" : "Valider mes réponses") : "Suivante →"}
+        </PixelButton>
+      </div>
     </form>
   );
 }

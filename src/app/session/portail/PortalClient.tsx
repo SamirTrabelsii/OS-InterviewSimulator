@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { PortalView } from "@/engine/portal";
+import { PixelButton, PixelLink, PixelPanel, PixelStatus } from "@/ui/pixel/components";
 import { CodeEditor } from "../CodeEditor";
 import { EventTracker } from "../EventTracker";
 import { reasonText, usePortal, type Link as LinkState } from "./usePortal";
@@ -31,7 +31,7 @@ function Clock({ view, offset }: { view: PortalView; offset: number }) {
   if (left === null) return null;
   const total = Math.max(0, Math.ceil(left / 1000));
   return (
-    <span role="timer" className={`font-mono text-2xl tabular-nums ${total < 300 ? "text-red-600 dark:text-red-400" : ""}`}>
+    <span role="timer" className="px-hud-time" data-urgent={total < 300}>
       {String(Math.floor(total / 60)).padStart(2, "0")}:{String(total % 60).padStart(2, "0")}
     </span>
   );
@@ -46,17 +46,17 @@ function LinkBanner({ link }: { link: LinkState }) {
     refuse: "Accès refusé. Rouvrez votre lien personnel.",
   };
   return (
-    <p role="alert" className="rounded-md bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">
-      {text[link]}
-    </p>
+    <PixelStatus tone="warn" role="alert">
+      <p>{text[link]}</p>
+    </PixelStatus>
   );
 }
 
 function PartnerBadge({ view }: { view: PortalView }) {
   if (!view.partner) return null;
   return (
-    <span className="inline-flex items-center gap-2 text-sm">
-      <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${view.partner.online ? "bg-green-500" : "bg-zinc-400"}`} />
+    <span className="px-pill">
+      <span aria-hidden className="px-dot" data-on={view.partner.online} />
       {view.partner.name} · {view.partner.online ? "connecté" : "hors ligne"}
     </span>
   );
@@ -77,36 +77,49 @@ export function PortalClient({ epilogue }: { epilogue: string }) {
       <>
         <EventTracker stage="portail" />
         <LinkBanner link={link} />
-        <p className="text-zinc-500">Connexion au Portail…</p>
+        <p className="px-muted" role="status">
+          Connexion au Portail…
+        </p>
       </>
     );
   }
 
   return (
-    <section className="space-y-4">
+    <section className="px-stack">
       <EventTracker stage="portail" />
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Link href="/session" className="text-sm underline">
-            ← Retour aux gemmes
-          </Link>
-          <h1 className="text-2xl font-semibold">{view.title}</h1>
+      <PixelPanel tone="cyan">
+        <div className="px-hud">
+          <div>
+            <PixelLink href="/session" variant="ghost">
+              ← Quartier
+            </PixelLink>
+            <h1 className="px-stage-title" style={{ marginTop: "0.25rem" }}>
+              {view.title}
+            </h1>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+            <PartnerBadge view={view} />
+            <Clock view={view} offset={offset.current} />
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <PartnerBadge view={view} />
-          <Clock view={view} offset={offset.current} />
-        </div>
-      </header>
+      </PixelPanel>
       <LinkBanner link={link} />
 
       {view.phase === "ferme" && <Closed view={view} />}
-      {view.phase === "termine" && <p className="text-center text-lg">Temps écoulé. Merci pour votre participation !</p>}
+      {view.phase === "termine" && (
+        <PixelPanel tone="violet">
+          <p className="px-read" style={{ margin: 0, textAlign: "center" }}>
+            Temps écoulé. Merci pour votre participation !
+          </p>
+        </PixelPanel>
+      )}
       {view.phase === "resolu" && (
-        <div className="space-y-3 rounded-xl border border-green-500 bg-green-50 p-6 text-green-900 dark:bg-green-950 dark:text-green-100">
-          <p className="text-xl font-semibold">Le Portail s&apos;ouvre !</p>
-          <p>{epilogue}</p>
-          <p className="text-sm">Le recruteur reviendra vers vous. Vous pouvez fermer cet onglet.</p>
-        </div>
+        <PixelPanel tone="green" glow={3} title="Le Portail s'ouvre !">
+          <p className="px-read px-story">{epilogue}</p>
+          <p className="px-muted" style={{ marginBottom: 0 }}>
+            Le recruteur reviendra vers vous. Vous pouvez fermer cet onglet.
+          </p>
+        </PixelPanel>
       )}
       {view.phase === "ouvert" && <Open view={view} send={send} link={link} />}
     </section>
@@ -116,21 +129,19 @@ export function PortalClient({ epilogue }: { epilogue: string }) {
 function Closed({ view }: { view: PortalView }) {
   const latest = view.opensByLatest ? new Date(view.opensByLatest) : null;
   return (
-    <div className="space-y-2 rounded-xl border border-dashed border-indigo-400 p-8 text-center">
-      <p className="text-xl font-medium">Le Portail s&apos;éveille…</p>
-      <p className="text-zinc-600 dark:text-zinc-400">
+    <PixelPanel tone="violet" glow={1} title="Le Portail s'éveille…">
+      <p className="px-read px-story">
         Il s&apos;ouvrira dès que {view.partner ? "vous et votre binôme aurez" : "vous aurez"} les 4 gemmes
         {latest ? `, au plus tard à ${latest.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}` : ""}.
       </p>
-      <p>
-        <Link href="/session" className="underline">
+      <div className="px-actions">
+        <PixelLink href="/session" variant="primary">
           Retourner chercher les gemmes manquantes
-        </Link>
-      </p>
-    </div>
+        </PixelLink>
+      </div>
+    </PixelPanel>
   );
 }
-
 
 type Send = ReturnType<typeof usePortal>["send"];
 
@@ -185,21 +196,20 @@ function PilotEditor({ view, send, link, onNote }: { view: PortalView; send: Sen
   };
 
   return (
-    <div className="space-y-3">
-      <h2 className="font-medium">Le code à corriger{view.functionName ? ` — ${view.functionName}` : ""}</h2>
-      <CodeEditor language="python" initialValue={view.code ?? ""} onChange={onChange} onRun={run} label="Code Python du Portail" height={420} />
-      <div className="flex flex-wrap items-center gap-3">
-        <button onClick={run} disabled={busy} className="rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-500 disabled:opacity-50">
+    <PixelPanel tone="magenta" title={`Le code à corriger${view.functionName ? ` — ${view.functionName}` : ""}`}>
+      <CodeEditor night language="python" initialValue={view.code ?? ""} onChange={onChange} onRun={run} label="Code Python du Portail" height={420} />
+      <div className="px-actions">
+        <PixelButton variant="primary" onClick={run} disabled={busy}>
           {busy ? "Vérification…" : "Exécuter et vérifier"}
-        </button>
-        <span className="text-sm text-zinc-600 dark:text-zinc-400">Ctrl + Entrée · seul le pilote tape.</span>
+        </PixelButton>
+        <span className="px-muted">Ctrl + Entrée · seul le pilote tape.</span>
       </div>
       {view.role === "pilote" && (
-        <p className="rounded-md border border-dashed border-zinc-400 p-3 text-sm text-zinc-600 dark:text-zinc-400">
-          Vous ne voyez ni les logs ni le ticket du client : votre copilote les a. Parlez-vous (Teams) !
-        </p>
+        <PixelStatus>
+          <p>Vous ne voyez ni les logs ni le ticket du client : votre copilote les a. Parlez-vous (Teams) !</p>
+        </PixelStatus>
       )}
-    </div>
+    </PixelPanel>
   );
 }
 
@@ -215,74 +225,75 @@ function Open({ view, send, link }: { view: PortalView; send: Send; link: LinkSt
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-900 dark:bg-indigo-950 dark:text-indigo-100">{ROLE_LABEL[view.role]}</p>
+    <div className="px-stack">
+      <div className="px-hud">
+        <p className="px-pill">{ROLE_LABEL[view.role]}</p>
         {view.result && (
-          <p aria-live="polite" className="font-mono text-lg">
+          <p aria-live="polite" className="px-score">
             {view.result.passed} / {view.result.total}
           </p>
         )}
       </div>
-      <p className="text-lg leading-relaxed text-zinc-700 dark:text-zinc-300">{view.story}</p>
+      <PixelPanel tone="cyan">
+        <p className="px-read px-story">{view.story}</p>
+      </PixelPanel>
       {note && (
-        <p role="alert" className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">
-          {note}
-        </p>
+        <PixelStatus tone="bad">
+          <p>{note}</p>
+        </PixelStatus>
       )}
 
       {view.hand === "recue" && (
-        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-indigo-400 p-4">
+        <PixelStatus tone="warn" role="alert">
           <p>Votre binôme demande le clavier.</p>
-          <div className="flex gap-2">
-            <button onClick={() => hand("hand:grant")} className="rounded-md bg-indigo-600 px-3 py-1.5 font-medium text-white hover:bg-indigo-500">
+          <div className="px-actions">
+            <PixelButton variant="primary" onClick={() => hand("hand:grant")}>
               Passer la main
-            </button>
-            <button onClick={() => hand("hand:deny")} className="rounded-md border border-zinc-400 px-3 py-1.5">
+            </PixelButton>
+            <PixelButton variant="ghost" onClick={() => hand("hand:deny")}>
               Pas maintenant
-            </button>
+            </PixelButton>
           </div>
-        </div>
+        </PixelStatus>
       )}
 
-      <div className={`grid gap-4 ${writer && seesContext ? "lg:grid-cols-2" : ""}`}>
+      <div className={`px-split ${writer && seesContext ? "px-split-2" : ""}`}>
         {writer && <PilotEditor key={`${view.epoch}-${view.role}`} view={view} send={send} link={link} onNote={setNote} />}
 
         {seesContext && (
-          <div className="space-y-3">
+          <div className="px-stack">
             {view.clientContext && (
-              <div className="rounded-lg border-l-4 border-sky-500 bg-sky-50 px-4 py-3 dark:bg-sky-950">
-                <h2 className="mb-1 font-medium">Contexte client</h2>
-                <p>{view.clientContext}</p>
-              </div>
+              <PixelPanel tone="cyan" title="Contexte client">
+                <p className="px-read px-story">{view.clientContext}</p>
+              </PixelPanel>
             )}
-            {view.statement && <p className="rounded-lg border-l-4 border-emerald-500 bg-emerald-50 px-4 py-3 dark:bg-emerald-950">{view.statement}</p>}
+            {view.statement && (
+              <PixelPanel tone="green" title="Mission">
+                <p className="px-read px-story">{view.statement}</p>
+              </PixelPanel>
+            )}
             {view.examples && (
-              <details className="rounded-md border border-zinc-300 p-3 dark:border-zinc-700">
-                <summary className="cursor-pointer font-medium">Exemples</summary>
-                <ul className="mt-2 space-y-1 font-mono text-xs">
-                  {view.examples.map((ex, i) => (
-                    <li key={i}>
-                      ({ex.args.map(show).join(", ")}) → {show(ex.expected)}
-                    </li>
-                  ))}
-                </ul>
-              </details>
+              <PixelPanel tone="violet">
+                <details className="px-details">
+                  <summary>Exemples</summary>
+                  <ul className="px-code" style={{ margin: 0, paddingLeft: "1.1rem", fontSize: "0.8125rem" }}>
+                    {view.examples.map((ex, i) => (
+                      <li key={i}>
+                        ({ex.args.map(show).join(", ")}) → {show(ex.expected)}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </PixelPanel>
             )}
             <Logs lines={view.logs ?? []} />
             {view.role === "copilote" && (
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => hand("hand:request")}
-                  disabled={view.hand === "envoyee"}
-                  className="rounded-md border border-indigo-500 px-4 py-2 font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 dark:text-indigo-300 dark:hover:bg-indigo-950"
-                >
+              <div className="px-actions">
+                <PixelButton variant="primary" onClick={() => hand("hand:request")} disabled={view.hand === "envoyee"}>
                   {view.hand === "envoyee" ? "Demande envoyée…" : "Demander la main"}
-                </button>
+                </PixelButton>
                 {view.canTakeOver && (
-                  <button onClick={() => hand("hand:take")} className="rounded-md bg-amber-500 px-4 py-2 font-medium text-white hover:bg-amber-400">
-                    Prendre la main (pilote absent)
-                  </button>
+                  <PixelButton onClick={() => hand("hand:take")}>Prendre la main (pilote absent)</PixelButton>
                 )}
               </div>
             )}
@@ -291,7 +302,7 @@ function Open({ view, send, link }: { view: PortalView; send: Send; link: LinkSt
       </div>
 
       {view.partner && !view.partner.online && (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="px-muted">
           {view.partner.name} n&apos;est pas connecté. {view.role === "pilote" ? "Vous continuez ; il retrouvera l'état à son retour. " : ""}
           Si cela dure, prévenez le recruteur : il peut vous faire poursuivre seul.
         </p>
@@ -306,11 +317,10 @@ function Logs({ lines }: { lines: string[] }) {
     box.current?.scrollTo({ top: box.current.scrollHeight });
   }, [lines.length]);
   return (
-    <div>
-      <h2 className="mb-1 font-medium">Logs d&apos;exécution</h2>
-      <pre ref={box} tabIndex={0} aria-label="Logs d'exécution" className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-zinc-900 p-3 font-mono text-xs leading-relaxed text-zinc-100">
+    <PixelPanel tone="amber" title="Logs d'exécution">
+      <pre ref={box} tabIndex={0} aria-label="Logs d'exécution" className="px-logs" style={{ margin: 0 }}>
         {lines.join("\n")}
       </pre>
-    </div>
+    </PixelPanel>
   );
 }

@@ -220,8 +220,21 @@ Parties (une à la fois, arrêt et revue entre chaque) :
    Branché sur `/session` (HUD réduit : chrono, gemmes ; pas de Bip tant
    qu'il est désactivé) ; accueil et fin inchangés (partie 4). Démo :
    `/dev/hub` (404 en production).
-3. **Épreuves et Portail** — quiz, SQL, algo, logique et binôme habillés
-   avec les composants ; tiroir Bip/indices ; un bouton principal.
+3. **Épreuves et Portail** ✅ (2026-11-15) — quiz, SQL, algo, logique et
+   binôme habillés avec les composants ; tiroir d'aide ; un bouton principal.
+   Réalisé : cadre commun `StageFrame` (HUD réduit : chrono, gemmes, tiroir
+   « Aide » ; titre ; énoncé ; une zone d'action), `StageShell` inchangé
+   côté contenu public. Quiz : une question par écran (Suivante / Valider,
+   barre d'avancement). Logique : cadenas, un bouton « Essayer ». SQL et
+   Algo : Monaco au thème nuit (`CodeEditor night`), « Soumettre » principal
+   et « Exécuter / Tester » secondaire, statuts « X / Y » inchangés, tables
+   et exemples en rubriques repliables. Portail : `PortalClient` réécrit
+   côté affichage seulement (socket, rôles et passage de main inchangés),
+   un bouton principal par rôle. Le tiroir ne contient que les règles de
+   l'épreuve : il n'y a ni indices ni Bip tant que le contenu et
+   l'étape 12 n'existent pas (le bouton n'apparaît que s'il y a quelque
+   chose à ouvrir). Côté recruteur : rien de changé (`CodeEditor` garde son
+   thème clair/sombre hors `night`).
 4. **Accueil et finitions** — accueil, fin, états d'erreur, animations,
    réduction des animations, passe d'accessibilité et de performance.
 

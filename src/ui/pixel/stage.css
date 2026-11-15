@@ -1,0 +1,343 @@
+/* Épreuves et Portail : mise en page et petits composants (voir tokens.css). */
+
+.px-stage {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--px) * 4);
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: calc(var(--px) * 4);
+}
+.px-stage-wide {
+  max-width: 1400px;
+}
+.px-stage-head {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--px) * 6);
+  flex-wrap: wrap;
+}
+.px-stage-title {
+  font-family: var(--f-pixel);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 1.375rem;
+  margin: 0;
+  color: var(--c-text);
+}
+.px-link {
+  font-family: var(--f-pixel);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-dim);
+  text-decoration: none;
+  padding: calc(var(--px) * 2);
+}
+.px-link:hover {
+  color: var(--c-cyan);
+}
+.px-link:focus-visible {
+  outline: calc(var(--px) * 2) solid var(--c-amber);
+  outline-offset: var(--px);
+}
+.px-story {
+  margin: 0;
+}
+.px-muted {
+  color: var(--c-text-dim);
+  font-family: var(--f-read);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.px-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 4);
+  flex-wrap: wrap;
+  margin-top: calc(var(--px) * 4);
+}
+.px-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Étapes (quiz : une question par écran) */
+.px-stepper-label {
+  font-family: var(--f-pixel);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-dim);
+  margin: 0;
+}
+
+/* Choix de réponse */
+.px-choices {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--px) * 3);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.px-choice {
+  --edge: var(--c-line-2);
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--px) * 4);
+  padding: calc(var(--px) * 4) calc(var(--px) * 5);
+  margin: var(--px);
+  background: var(--c-surface-2);
+  font-family: var(--f-read);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  cursor: pointer;
+  box-shadow:
+    calc(var(--px) * -1) 0 0 0 var(--edge),
+    var(--px) 0 0 0 var(--edge),
+    0 calc(var(--px) * -1) 0 0 var(--edge),
+    0 var(--px) 0 0 var(--edge);
+}
+.px-choice:hover {
+  --edge: var(--c-line-3);
+  background: var(--c-surface-3);
+}
+.px-choice:has(input:checked) {
+  --edge: var(--c-cyan);
+  background: var(--c-surface-3);
+}
+.px-choice:has(input:focus-visible) {
+  outline: calc(var(--px) * 2) solid var(--c-amber);
+  outline-offset: calc(var(--px) * 2);
+}
+.px-choice input {
+  appearance: none;
+  flex: none;
+  width: calc(var(--px) * 6);
+  height: calc(var(--px) * 6);
+  margin: calc(var(--px) * 1.5) 0 0;
+  background: var(--c-bg-0);
+  box-shadow: 0 0 0 var(--px) var(--c-line-3);
+}
+.px-choice input:checked {
+  background: var(--c-cyan);
+  box-shadow: 0 0 0 var(--px) var(--c-cyan-d);
+}
+
+/* Champ de saisie (code du cadenas) */
+.px-field {
+  appearance: none;
+  border: 0;
+  border-radius: 0;
+  background: var(--c-bg-0);
+  color: var(--c-text);
+  font-family: var(--f-code);
+  font-size: 1.75rem;
+  letter-spacing: 0.4em;
+  text-align: center;
+  width: calc(var(--px) * 90);
+  max-width: 100%;
+  padding: calc(var(--px) * 4);
+  margin: var(--px);
+  box-shadow:
+    calc(var(--px) * -1) 0 0 0 var(--c-line-2),
+    var(--px) 0 0 0 var(--c-line-2),
+    0 calc(var(--px) * -1) 0 0 var(--c-line-2),
+    0 var(--px) 0 0 var(--c-line-2);
+}
+.px-field:focus-visible {
+  outline: calc(var(--px) * 2) solid var(--c-amber);
+  outline-offset: calc(var(--px) * 2);
+}
+.px-field-label {
+  display: block;
+  font-family: var(--f-read);
+  color: var(--c-text-dim);
+  margin-bottom: calc(var(--px) * 2);
+}
+
+/* Éditeur de code (Monaco et repli en zone de texte) */
+.px-editor {
+  overflow: hidden;
+  background: var(--c-bg-0);
+  margin: var(--px);
+}
+.px-textarea {
+  width: 100%;
+  background: var(--c-bg-0);
+  color: var(--c-text);
+  border: 0;
+  padding: calc(var(--px) * 4);
+  font-family: var(--f-code);
+  font-size: 0.9375rem;
+}
+
+/* Statut d'une soumission, alertes, notes */
+.px-status {
+  --edge: var(--c-line-2);
+  margin: var(--px);
+  padding: calc(var(--px) * 4) calc(var(--px) * 5);
+  background: var(--c-surface-2);
+  font-family: var(--f-read);
+  font-size: 1rem;
+  box-shadow:
+    calc(var(--px) * -1) 0 0 0 var(--edge),
+    var(--px) 0 0 0 var(--edge),
+    0 calc(var(--px) * -1) 0 0 var(--edge),
+    0 var(--px) 0 0 var(--edge);
+}
+.px-status[data-tone="ok"] { --edge: var(--c-green); }
+.px-status[data-tone="warn"] { --edge: var(--c-amber); }
+.px-status[data-tone="bad"] { --edge: var(--c-danger); }
+.px-status p { margin: 0; }
+.px-status p + p { margin-top: calc(var(--px) * 2); }
+.px-status-title { font-weight: 700; }
+.px-status code { font-family: var(--f-code); font-size: 0.8125rem; }
+
+/* Tableaux (résultats SQL, aperçu des tables) */
+.px-table-wrap {
+  overflow: auto;
+  max-height: 20rem;
+  background: var(--c-bg-0);
+  margin: var(--px);
+}
+.px-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--f-code);
+  font-size: 0.8125rem;
+  text-align: left;
+}
+.px-table th {
+  position: sticky;
+  top: 0;
+  background: var(--c-surface-3);
+  color: var(--c-text);
+  padding: calc(var(--px) * 2) calc(var(--px) * 4);
+  font-weight: 700;
+}
+.px-table td {
+  padding: calc(var(--px) * 1.5) calc(var(--px) * 4);
+  border-top: var(--px) solid var(--c-surface-2);
+}
+
+/* Cartes d'exemples */
+.px-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: calc(var(--px) * 4);
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+.px-card {
+  background: var(--c-surface-2);
+  padding: calc(var(--px) * 4);
+  margin: var(--px);
+  font-family: var(--f-code);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  box-shadow: 0 0 0 var(--px) var(--c-line-1);
+}
+.px-card[data-state="ok"] { box-shadow: 0 0 0 var(--px) var(--c-green-d); }
+.px-card[data-state="bad"] { box-shadow: 0 0 0 var(--px) var(--c-danger); }
+.px-card-title { font-family: var(--f-read); font-size: 0.9375rem; font-weight: 700; margin: 0 0 calc(var(--px) * 2); }
+.px-card p { margin: 0; }
+.px-card pre { margin: calc(var(--px) * 2) 0 0; white-space: pre-wrap; background: var(--c-bg-0); padding: calc(var(--px) * 2); max-height: 8rem; overflow: auto; }
+
+/* Rubriques repliables (tables SQL, exemples) */
+.px-details > summary {
+  cursor: pointer;
+  font-family: var(--f-pixel);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-dim);
+  padding: calc(var(--px) * 2) 0;
+}
+.px-details > summary:focus-visible {
+  outline: calc(var(--px) * 2) solid var(--c-amber);
+  outline-offset: var(--px);
+}
+.px-details[open] > summary { margin-bottom: calc(var(--px) * 3); }
+
+/* Journaux d'exécution */
+.px-logs {
+  max-height: 18rem;
+  overflow: auto;
+  margin: var(--px);
+  padding: calc(var(--px) * 4);
+  background: var(--c-bg-0);
+  color: var(--c-text-dim);
+  font-family: var(--f-code);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.px-logs:focus-visible {
+  outline: calc(var(--px) * 2) solid var(--c-amber);
+}
+
+/* Pastilles : rôle, partenaire */
+.px-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--px) * 3);
+  padding: calc(var(--px) * 2) calc(var(--px) * 5);
+  margin: var(--px);
+  background: var(--c-surface-3);
+  color: var(--c-text);
+  font-family: var(--f-read);
+  font-size: 0.9375rem;
+  box-shadow: 0 0 0 var(--px) var(--c-line-2);
+}
+.px-dot {
+  width: calc(var(--px) * 4);
+  height: calc(var(--px) * 4);
+  background: var(--c-line-3);
+  flex: none;
+}
+.px-dot[data-on="true"] {
+  background: var(--c-green);
+}
+.px-score {
+  font-family: var(--f-pixel);
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Colonnes (pilote / copilote) */
+.px-split {
+  display: grid;
+  gap: calc(var(--px) * 4);
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 1024px) {
+  .px-split-2 {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+.px-stack {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--px) * 3);
+}
+
+/* Aide : liste de règles dans le tiroir */
+.px-rules {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-family: var(--f-read);
+  line-height: 1.7;
+  color: var(--c-text);
+}
+.px-rules li + li {
+  margin-top: calc(var(--px) * 3);
+}

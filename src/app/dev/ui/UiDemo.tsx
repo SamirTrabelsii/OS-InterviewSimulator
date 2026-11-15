@@ -47,7 +47,7 @@ export function UiDemo() {
         <Hud
           timer="32:15"
           gems={gems}
-          bip={{ onClick: () => setDrawer((o) => !o), expanded: drawer }}
+          drawer={{ label: "Aide", icon: "bip", onClick: () => setDrawer((o) => !o), expanded: drawer }}
         />
         <p style={{ margin: "12px 0 0" }}>
           {ALL_GEMS.map((g) => (

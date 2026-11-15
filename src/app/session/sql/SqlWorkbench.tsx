@@ -6,6 +6,7 @@ import { datasetToSql } from "@/engine/sql/setup";
 import { CodeEditor } from "../CodeEditor";
 import { SubmissionStatus, useCodeSnapshots, useSubmission } from "../code-stage";
 import { trackEvent } from "../EventTracker";
+import { PixelButton, PixelPanel, PixelStatus } from "@/ui/pixel/components";
 
 const BROWSER_TIMEOUT_MS = 3_000;
 const BROWSER_MAX_ROWS = 200;
@@ -39,7 +40,7 @@ function runInWorker(setup: string, query: string): Promise<RunResult> {
 
 const cell = (v: unknown) => (v === null ? "NULL" : String(v));
 
-export function SqlWorkbench({ dataset, expectedColumns }: { dataset: SqlDataset; expectedColumns: string[] }) {
+export function SqlWorkbench({ dataset }: { dataset: SqlDataset }) {
   const setup = useMemo(() => datasetToSql(dataset), [dataset]);
   const codeRef = useCodeSnapshots("sql", STARTER);
   const [running, setRunning] = useState(false);
@@ -65,56 +66,43 @@ export function SqlWorkbench({ dataset, expectedColumns }: { dataset: SqlDataset
   }
 
   return (
-    <div className="space-y-4">
-      <CodeEditor language="sql" initialValue={STARTER} onChange={(v) => (codeRef.current = v)} onRun={() => void execute()} label="Requête SQL" />
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => void execute()}
-          disabled={running}
-          className="rounded-md border border-zinc-300 px-4 py-2 font-medium hover:border-indigo-400 disabled:opacity-50 dark:border-zinc-700"
-        >
-          {running ? "Exécution…" : "Exécuter"}
-        </button>
-        <button
-          type="button"
-          onClick={() => void submit({ query: codeRef.current })}
-          disabled={pending || waitSeconds > 0}
-          className="rounded-md bg-indigo-600 px-5 py-2 font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {waitSeconds > 0 ? `Patientez ${waitSeconds} s` : pending ? "Vérification…" : "Soumettre"}
-        </button>
-        <span className="text-xs text-zinc-500">Ctrl + Entrée : exécuter sur le jeu visible. Colonnes attendues : {expectedColumns.join(", ")}.</span>
-      </div>
+    <div className="px-stack">
+      <PixelPanel tone="green" title="Votre requête">
+        <CodeEditor night language="sql" initialValue={STARTER} onChange={(v) => (codeRef.current = v)} onRun={() => void execute()} label="Requête SQL" />
+        <div className="px-actions">
+          <PixelButton variant="primary" onClick={() => void submit({ query: codeRef.current })} disabled={pending || waitSeconds > 0}>
+            {waitSeconds > 0 ? `Patientez ${waitSeconds} s` : pending ? "Vérification…" : "Soumettre"}
+          </PixelButton>
+          <PixelButton onClick={() => void execute()} disabled={running}>
+            {running ? "Exécution…" : "Exécuter"}
+          </PixelButton>
+        </div>
+      </PixelPanel>
 
       <SubmissionStatus result={result} message={message} what="Vérifications réussies" />
 
       {run && (
-        <section aria-label="Résultat de la requête" className="space-y-2">
+        <PixelPanel tone="violet" title="Résultat de la requête">
           {run.ok ? (
             <>
-              <p className="text-xs text-zinc-500">
+              <p className="px-muted" style={{ margin: "0 0 0.5rem" }}>
                 {run.rows.length} ligne{run.rows.length > 1 ? "s" : ""}
                 {run.truncated ? ` (affichage limité à ${BROWSER_MAX_ROWS})` : ""} · {run.durationMs} ms · jeu de données visible
               </p>
-              <div className="max-h-80 overflow-auto rounded-md border border-zinc-200 dark:border-zinc-800">
-                <table className="w-full text-left font-mono text-xs">
-                  <thead className="sticky top-0 bg-zinc-100 dark:bg-zinc-900">
+              <div className="px-table-wrap">
+                <table className="px-table">
+                  <thead>
                     <tr>
                       {run.columns.map((c, i) => (
-                        <th key={i} className="px-3 py-1.5 font-semibold">
-                          {c}
-                        </th>
+                        <th key={i}>{c}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {run.rows.map((row, i) => (
-                      <tr key={i} className="border-t border-zinc-100 dark:border-zinc-800">
+                      <tr key={i}>
                         {row.map((v, j) => (
-                          <td key={j} className="px-3 py-1">
-                            {cell(v)}
-                          </td>
+                          <td key={j}>{cell(v)}</td>
                         ))}
                       </tr>
                     ))}
@@ -123,9 +111,13 @@ export function SqlWorkbench({ dataset, expectedColumns }: { dataset: SqlDataset
               </div>
             </>
           ) : (
-            <p className="rounded-md bg-red-50 px-3 py-2 font-mono text-xs text-red-800 dark:bg-red-950 dark:text-red-200">{run.error}</p>
+            <PixelStatus tone="bad">
+              <p>
+                <code>{run.error}</code>
+              </p>
+            </PixelStatus>
           )}
-        </section>
+        </PixelPanel>
       )}
     </div>
   );

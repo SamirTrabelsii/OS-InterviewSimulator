@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+import { PixelPanel } from "@/ui/pixel/components";
+import { StageLoading } from "../StageLoading";
 import { StageShell } from "../StageShell";
 import { SqlWorkbench } from "./SqlWorkbench";
 
@@ -6,56 +8,74 @@ const PREVIEW_ROWS = 5;
 
 export default function SqlPage() {
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-6">
-      <Suspense fallback={<p className="text-zinc-500">Chargement…</p>}>
-        <StageShell gem="sql">
-          {({ content }) => {
-            // Contenu PUBLIC uniquement : énoncé et jeu de données visible.
-            const stage = content.stages.sql;
-            return (
-              <div className="space-y-6">
-                <p className="rounded-lg border-l-4 border-sky-500 bg-sky-50 px-4 py-3 dark:bg-sky-950">{stage.task}</p>
+    <Suspense fallback={<StageLoading />}>
+      <StageShell
+        gem="sql"
+        wide
+        help={({ content }) => (
+          <ul className="px-rules">
+            <li>« Exécuter » (ou Ctrl + Entrée) lance votre requête sur le jeu de données visible.</li>
+            <li>« Soumettre » la vérifie aussi sur un jeu que vous ne voyez pas ; vous obtenez seulement « X / Y ».</li>
+            <li>Soumissions illimitées, avec 3 secondes d&apos;attente entre deux.</li>
+            <li>Colonnes attendues : {content.stages.sql.expectedColumns.join(", ")}.</li>
+          </ul>
+        )}
+      >
+        {({ content }) => {
+          // Contenu PUBLIC uniquement : énoncé et jeu de données visible.
+          const stage = content.stages.sql;
+          return (
+            <div className="px-stack">
+              <PixelPanel tone="green" title="Mission">
+                <p className="px-read px-story">{stage.task}</p>
+              </PixelPanel>
 
-                <details className="rounded-lg border border-zinc-200 dark:border-zinc-800" open>
-                  <summary className="cursor-pointer px-4 py-2 font-medium">Tables disponibles (SQLite)</summary>
-                  <div className="grid gap-4 p-4 lg:grid-cols-3">
+              <SqlWorkbench dataset={stage.dataset} />
+
+              <PixelPanel tone="violet">
+                <details className="px-details" open>
+                  <summary>Tables disponibles (SQLite)</summary>
+                  <div className="px-split" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(16rem, 1fr))" }}>
                     {stage.dataset.tables.map((t) => (
-                      <section key={t.name} className="space-y-2 text-sm">
-                        <h2 className="font-mono font-semibold">
-                          {t.name} <span className="font-sans font-normal text-zinc-500">({t.rows.length} lignes)</span>
+                      <section key={t.name} className="px-stack">
+                        <h2 className="px-code" style={{ margin: 0, fontWeight: 700 }}>
+                          {t.name} <span className="px-muted">({t.rows.length} lignes)</span>
                         </h2>
-                        <p className="text-zinc-600 dark:text-zinc-400">{t.description}</p>
-                        <ul className="space-y-0.5">
+                        <p className="px-muted" style={{ margin: 0 }}>
+                          {t.description}
+                        </p>
+                        <ul className="px-muted" style={{ margin: 0, paddingLeft: "1.1rem" }}>
                           {t.columns.map((c) => (
                             <li key={c.name}>
-                              <code className="font-semibold">{c.name}</code> <span className="text-xs text-zinc-500">{c.type}</span> — {c.description}
+                              <code className="px-code" style={{ fontWeight: 700 }}>
+                                {c.name}
+                              </code>{" "}
+                              <span style={{ fontSize: "0.75rem" }}>{c.type}</span> — {c.description}
                             </li>
                           ))}
                         </ul>
-                        <table className="w-full font-mono text-xs">
-                          <tbody>
-                            {t.rows.slice(0, PREVIEW_ROWS).map((row, i) => (
-                              <tr key={i} className="border-t border-zinc-100 dark:border-zinc-800">
-                                {row.map((v, j) => (
-                                  <td key={j} className="py-0.5 pr-2">
-                                    {String(v)}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                        <div className="px-table-wrap" style={{ maxHeight: "11rem" }}>
+                          <table className="px-table">
+                            <tbody>
+                              {t.rows.slice(0, PREVIEW_ROWS).map((row, i) => (
+                                <tr key={i}>
+                                  {row.map((v, j) => (
+                                    <td key={j}>{String(v)}</td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </section>
                     ))}
                   </div>
                 </details>
-
-                <SqlWorkbench dataset={stage.dataset} expectedColumns={stage.expectedColumns} />
-              </div>
-            );
-          }}
-        </StageShell>
-      </Suspense>
-    </main>
+              </PixelPanel>
+            </div>
+          );
+        }}
+      </StageShell>
+    </Suspense>
   );
 }

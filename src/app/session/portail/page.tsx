@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { currentCandidate } from "@/server/candidate/current";
 import { loadPublicInstance } from "@/server/content/registry";
+import { NightShell } from "@/ui/pixel/NightShell";
+import { StageLoading } from "../StageLoading";
 import { PortalClient } from "./PortalClient";
 
 async function PortailScreen() {
@@ -17,10 +19,12 @@ async function PortailScreen() {
 
 export default function PortailPage() {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-6">
-      <Suspense fallback={<p className="text-zinc-500">Chargement…</p>}>
-        <PortailScreen />
-      </Suspense>
-    </main>
+    <Suspense fallback={<StageLoading />}>
+      <NightShell>
+        <div className="px-stage px-stage-wide">
+          <PortailScreen />
+        </div>
+      </NightShell>
+    </Suspense>
   );
 }

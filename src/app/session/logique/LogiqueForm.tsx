@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { PixelButton, PixelPanel, PixelStatus } from "@/ui/pixel/components";
 
 export function LogiqueForm({ answerFormat, answerPattern }: { answerFormat: string; answerPattern: string }) {
   const router = useRouter();
@@ -48,30 +49,30 @@ export function LogiqueForm({ answerFormat, answerPattern }: { answerFormat: str
         e.preventDefault();
         void submit();
       }}
-      className="flex flex-wrap items-end gap-3"
     >
-      <label className="space-y-1">
-        <span className="block text-sm font-medium">Code du cadenas ({answerFormat})</span>
-        <input
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          inputMode="numeric"
-          autoComplete="off"
-          maxLength={8}
-          className="w-40 rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-center font-mono text-2xl tracking-[0.4em] dark:border-zinc-700"
-        />
-      </label>
-      <button
-        disabled={!wellFormed || waiting || pending}
-        className="rounded-md bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {waiting ? `Patientez ${Math.ceil((waitUntil - now) / 1000)} s` : pending ? "…" : "Essayer"}
-      </button>
-      {message && (
-        <p role="status" className="w-full text-sm text-zinc-700 dark:text-zinc-300">
-          {message}
-        </p>
-      )}
+      <PixelPanel tone="amber" title="Le cadenas">
+        <label>
+          <span className="px-field-label">Code du cadenas ({answerFormat})</span>
+          <input
+            className="px-field"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={8}
+          />
+        </label>
+        {message && (
+          <PixelStatus tone="warn">
+            <p>{message}</p>
+          </PixelStatus>
+        )}
+        <div className="px-actions">
+          <PixelButton type="submit" variant="primary" disabled={!wellFormed || waiting || pending}>
+            {waiting ? `Patientez ${Math.ceil((waitUntil - now) / 1000)} s` : pending ? "…" : "Essayer"}
+          </PixelButton>
+        </div>
+      </PixelPanel>
     </form>
   );
 }

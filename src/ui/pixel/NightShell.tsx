@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { fontCode, fontPixel, fontRead, fontUi } from "./fonts";
 import "./tokens.css";
 import "./pixel.css";
+import "./stage.css";
 
 /**
  * Enveloppe du côté candidat : charge les polices, les jetons et applique le

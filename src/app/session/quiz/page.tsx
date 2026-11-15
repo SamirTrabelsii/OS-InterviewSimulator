@@ -1,13 +1,23 @@
 import { Suspense } from "react";
+import { StageLoading } from "../StageLoading";
 import { StageShell } from "../StageShell";
 import { QuizForm } from "./QuizForm";
 
 export default function QuizPage() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6">
-      <Suspense fallback={<p className="text-zinc-500">Chargement…</p>}>
-        <StageShell gem="quiz">{({ content }) => <QuizForm questions={content.stages.quiz.questions} />}</StageShell>
-      </Suspense>
-    </main>
+    <Suspense fallback={<StageLoading />}>
+      <StageShell
+        gem="quiz"
+        help={
+          <ul className="px-rules">
+            <li>Une question à la fois : vous pouvez revenir en arrière avant de valider.</li>
+            <li>Une seule validation est possible : relisez-vous.</li>
+            <li>Aucune note n&apos;est affichée.</li>
+          </ul>
+        }
+      >
+        {({ content }) => <QuizForm questions={content.stages.quiz.questions} />}
+      </StageShell>
+    </Suspense>
   );
 }

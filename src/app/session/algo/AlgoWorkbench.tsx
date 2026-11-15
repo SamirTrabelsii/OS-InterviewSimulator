@@ -5,6 +5,7 @@ import { jsonEqual } from "@/engine/validators/algo";
 import { CodeEditor } from "../CodeEditor";
 import { SubmissionStatus, useCodeSnapshots, useSubmission } from "../code-stage";
 import { trackEvent } from "../EventTracker";
+import { PixelButton, PixelPanel, PixelStatus } from "@/ui/pixel/components";
 
 type Example = { args: unknown[]; expected: unknown };
 type CaseRun = { ok: boolean; value?: unknown; error?: string; output: string; durationMs: number };
@@ -107,63 +108,63 @@ export function AlgoWorkbench({ starterCode, functionName, examples }: { starter
   }
 
   return (
-    <div className="space-y-4">
-      <CodeEditor
-        language="python"
-        initialValue={starterCode}
-        onChange={(v) => (codeRef.current = v)}
-        onRun={() => void execute()}
-        label="Code Python"
-        height={320}
-      />
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => void execute()}
-          disabled={running}
-          className="rounded-md border border-zinc-300 px-4 py-2 font-medium hover:border-indigo-400 disabled:opacity-50 dark:border-zinc-700"
-        >
-          {running ? (loading ? "Chargement de Python…" : "Exécution…") : "Tester les exemples"}
-        </button>
-        <button
-          type="button"
-          onClick={() => void submit({ code: codeRef.current })}
-          disabled={pending || waitSeconds > 0}
-          className="rounded-md bg-indigo-600 px-5 py-2 font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {waitSeconds > 0 ? `Patientez ${waitSeconds} s` : pending ? "Tests en cours…" : "Soumettre"}
-        </button>
-        <span className="text-xs text-zinc-500">
-          {loading ? "Python se charge dans votre navigateur…" : "Ctrl + Entrée : tester les exemples."} La soumission lance des tests
-          cachés sur le serveur.
-        </span>
-      </div>
+    <div className="px-stack">
+      <PixelPanel tone="magenta" title="Votre code">
+        <CodeEditor
+          night
+          language="python"
+          initialValue={starterCode}
+          onChange={(v) => (codeRef.current = v)}
+          onRun={() => void execute()}
+          label="Code Python"
+          height={320}
+        />
+        <div className="px-actions">
+          <PixelButton variant="primary" onClick={() => void submit({ code: codeRef.current })} disabled={pending || waitSeconds > 0}>
+            {waitSeconds > 0 ? `Patientez ${waitSeconds} s` : pending ? "Tests en cours…" : "Soumettre"}
+          </PixelButton>
+          <PixelButton onClick={() => void execute()} disabled={running}>
+            {running ? (loading ? "Chargement de Python…" : "Exécution…") : "Tester les exemples"}
+          </PixelButton>
+        </div>
+        {loading && <p className="px-muted">Python se charge dans votre navigateur…</p>}
+      </PixelPanel>
 
       <SubmissionStatus result={result} message={message} what="Tests cachés réussis" />
 
       {run && !run.ok && (
-        <p className="rounded-md bg-red-50 px-3 py-2 font-mono text-xs text-red-800 dark:bg-red-950 dark:text-red-200">{run.error}</p>
+        <PixelStatus tone="bad">
+          <p>
+            <code>{run.error}</code>
+          </p>
+        </PixelStatus>
       )}
-      <ol className="space-y-3">
-        {examples.map((ex, i) => {
-          const c = run?.ok ? run.results[i] : undefined;
-          const ok = c?.ok && jsonEqual(c.value, ex.expected);
-          return (
-            <li key={i} className="space-y-1 rounded-lg border border-zinc-200 p-3 font-mono text-xs dark:border-zinc-800">
-              <p className="font-sans text-sm font-medium">
-                Exemple {i + 1}
-                {c && <span className={ok ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}> — {ok ? "réussi" : "échoué"}</span>}
-              </p>
-              <p>
-                {functionName}({ex.args.map(show).join(", ")})
-              </p>
-              <p>attendu : {show(ex.expected)}</p>
-              {c && <p>obtenu : {c.ok ? show(c.value) : c.error}</p>}
-              {c?.output && <pre className="max-h-32 overflow-auto whitespace-pre-wrap bg-zinc-50 p-2 dark:bg-zinc-900">{c.output}</pre>}
-            </li>
-          );
-        })}
-      </ol>
+
+      <PixelPanel tone="violet">
+        <details className="px-details" open>
+          <summary>Exemples</summary>
+          <ol className="px-cards">
+            {examples.map((ex, i) => {
+              const c = run?.ok ? run.results[i] : undefined;
+              const ok = c?.ok && jsonEqual(c.value, ex.expected);
+              return (
+                <li key={i} className="px-card" data-state={c ? (ok ? "ok" : "bad") : undefined}>
+                  <p className="px-card-title">
+                    Exemple {i + 1}
+                    {c && <span> — {ok ? "réussi" : "échoué"}</span>}
+                  </p>
+                  <p>
+                    {functionName}({ex.args.map(show).join(", ")})
+                  </p>
+                  <p>attendu : {show(ex.expected)}</p>
+                  {c && <p>obtenu : {c.ok ? show(c.value) : c.error}</p>}
+                  {c?.output && <pre>{c.output}</pre>}
+                </li>
+              );
+            })}
+          </ol>
+        </details>
+      </PixelPanel>
     </div>
   );
 }

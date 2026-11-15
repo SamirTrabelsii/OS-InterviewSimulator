@@ -1,4 +1,5 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import Link from "next/link";
+import type { ButtonHTMLAttributes, ComponentProps, ReactNode } from "react";
 import { SPRITES, type SpriteName } from "./sprites";
 
 export type Tone = "cyan" | "green" | "magenta" | "amber" | "violet";
@@ -67,6 +68,21 @@ export function PixelButton({
   );
 }
 
+/** Lien d'apparence bouton (navigation). Mêmes variantes que PixelButton. */
+export function PixelLink({
+  variant = "secondary",
+  className,
+  ...rest
+}: ComponentProps<typeof Link> & { variant?: "primary" | "secondary" | "ghost" }) {
+  return (
+    <Link
+      className={cx("px-btn", variant === "primary" && "px-btn-primary", variant === "ghost" && "px-btn-ghost", className)}
+      style={{ textDecoration: "none" }}
+      {...rest}
+    />
+  );
+}
+
 /** Barre à segments (progression). `value` est borné entre 0 et 1. */
 export function PixelBar({
   value,
@@ -111,19 +127,40 @@ export function GemIcon({ gem, lit }: { gem: GemId; lit: boolean }) {
 
 const GEM_ORDER: GemId[] = ["quiz", "sql", "algo", "logique"];
 
+/** Encart d'état : réussite, avertissement, erreur ou neutre. `role=status` (annoncé sans interrompre). */
+export function PixelStatus({
+  tone = "neutral",
+  role,
+  className,
+  children,
+}: {
+  tone?: "neutral" | "ok" | "warn" | "bad";
+  /** Par défaut : `alert` pour une erreur, `status` sinon. */
+  role?: "alert" | "status";
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div role={role ?? (tone === "bad" ? "alert" : "status")} className={cx("px-status", className)} data-tone={tone}>
+      {children}
+    </div>
+  );
+}
+
 /**
- * HUD réduit : chrono, 4 gemmes, Bip. Rien d'autre.
+ * HUD réduit : chrono, 4 gemmes, et un seul bouton de tiroir (Aide, ou Bip
+ * quand il sera activé). Rien d'autre.
  * `timer` est fourni par l'appelant (le vrai compte à rebours serveur) ;
- * `onBip` est absent quand Bip est désactivé : le bouton n'apparaît pas.
+ * `drawer` est absent quand il n'y a rien à ouvrir : le bouton n'apparaît pas.
  */
 export function Hud({
   timer,
   gems,
-  bip,
+  drawer,
 }: {
   timer: ReactNode;
   gems: ReadonlyArray<GemId>;
-  bip?: { onClick: () => void; expanded: boolean };
+  drawer?: { label: string; icon?: SpriteName; onClick: () => void; expanded: boolean };
 }) {
   return (
     <header className="px-hud px-panel px-edge px-tone-cyan">
@@ -137,10 +174,10 @@ export function Hud({
           </li>
         ))}
       </ul>
-      {bip && (
-        <PixelButton variant="secondary" onClick={bip.onClick} aria-expanded={bip.expanded} aria-controls="px-drawer">
-          <Sprite name="bip" />
-          Bip
+      {drawer && (
+        <PixelButton variant="secondary" onClick={drawer.onClick} aria-expanded={drawer.expanded} aria-controls="px-drawer">
+          {drawer.icon && <Sprite name={drawer.icon} />}
+          {drawer.label}
         </PixelButton>
       )}
     </header>
