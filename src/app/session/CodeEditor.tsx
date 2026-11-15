@@ -38,6 +38,12 @@ const NIGHT_DEF: Monaco.editor.IStandaloneThemeData = {
   },
 };
 
+/** Enregistre le thème nuit dans Monaco et renvoie son nom (aussi utilisé par le replay recruteur). */
+export function defineNightTheme(monaco: typeof Monaco): string {
+  monaco.editor.defineTheme(NIGHT_THEME, NIGHT_DEF);
+  return NIGHT_THEME;
+}
+
 let loading: Promise<typeof Monaco> | null = null;
 
 export function loadMonaco(): Promise<typeof Monaco> {

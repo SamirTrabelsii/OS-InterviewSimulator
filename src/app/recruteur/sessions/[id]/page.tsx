@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
 import { requireRecruiter } from "@/server/auth/guard";
-import { LegacySheet } from "@/ui/pixel/control/LegacySheet";
 import { ReviewClient } from "./ReviewClient";
 
 async function Review({ params }: { params: Promise<{ id: string }> }) {
@@ -12,8 +11,8 @@ async function Review({ params }: { params: Promise<{ id: string }> }) {
   if (!id.success) notFound();
   return (
     <>
-      <Link href="/recruteur" className="text-sm underline">
-        ← Créneaux
+      <Link href="/recruteur" className="rv-back">
+        ← Missions
       </Link>
       <ReviewClient sessionId={id.data} />
     </>
@@ -22,12 +21,10 @@ async function Review({ params }: { params: Promise<{ id: string }> }) {
 
 export default function SessionReviewPage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <LegacySheet>
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-6">
-        <Suspense fallback={<p className="text-zinc-500">Chargement…</p>}>
-          <Review params={params} />
-        </Suspense>
-      </main>
-    </LegacySheet>
+    <main className="rc-main rv-main">
+      <Suspense fallback={<p className="rc-sub">Chargement…</p>}>
+        <Review params={params} />
+      </Suspense>
+    </main>
   );
 }

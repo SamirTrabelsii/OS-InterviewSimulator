@@ -312,6 +312,16 @@ Parties (une à la fois, arrêt et revue entre chaque) :
      écoulé classé en « Passées ». Rafraîchissement toutes les 30 s s'il y a
      du direct. « Mission » : sous-titre « Vos créneaux d'entretien » et
      info-bulle. Démo sans base : `/dev/recruteur` (404 en production).
+   - **5c Replay et grille ✅ (2026-11-15)** : `/recruteur/sessions/[id]`
+     en deux colonnes côte à côte (replay à gauche, notation à droite), la
+     page ne défile pas et chaque colonne défile seule dès 1024 px (sinon
+     empilées). Gauche : candidat (avatar, gemmes), lecture, repères,
+     code en Monaco au thème nuit (`defineNightTheme`), correction du quiz,
+     événements. Droite : adéquation par profil et « non retenu » fixés en
+     haut, une carte par compétence (note 1 à 4, niveaux, « Marquer » /
+     « Aller à », justification), commentaire, « Enregistrer » fixé en bas
+     (seul bouton principal). Logique, API et notation inchangées ;
+     `LegacySheet` retiré de cette page.
 
 **Terminé quand** : aucun changement de logique serveur ; `npm test`,
 `npm run lint`, `npm run test:build` passent ; parcours complet candidat

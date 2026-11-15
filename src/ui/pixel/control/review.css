@@ -1,0 +1,420 @@
+/*
+ * « Replay et grille » : replay à gauche, notation à droite, côte à côte.
+ * Sur grand écran chaque colonne défile seule (la page ne défile pas) ;
+ * sur petit écran les deux colonnes s'empilent. Aucune animation.
+ */
+.rc-main.rv-main {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  gap: 10px;
+}
+.rv-back {
+  align-self: flex-start;
+  font-family: var(--f-pixel);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-dim);
+  text-decoration: none;
+}
+.rv-back:hover {
+  color: var(--c-text);
+}
+.rv-back:focus-visible {
+  outline: 2px solid var(--c-amber);
+  outline-offset: 2px;
+}
+.rv {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+.rv-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (min-width: 1024px) {
+  .rc-main.rv-main {
+    flex: none;
+    height: calc(100dvh - 52px);
+    overflow: hidden;
+  }
+  .rv {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  }
+  .rv-col {
+    overflow-y: auto;
+    padding: 4px 6px 12px 2px;
+    scrollbar-color: var(--c-line-3) var(--c-bg-1);
+  }
+}
+
+/* ---- en-tête candidat */
+.rv-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.rv-head-txt {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.rv-name {
+  font-size: 1.125rem;
+  overflow-wrap: anywhere;
+}
+
+/* ---- lecture */
+.rv-transport-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.rv-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--c-text-dim);
+}
+.rv-select {
+  background: var(--c-bg-0);
+  color: var(--c-text);
+  border: 1px solid var(--c-line-2);
+  padding: 4px 6px;
+  font: inherit;
+}
+.rv-time {
+  margin-left: auto;
+  font-family: var(--f-code);
+  font-variant-numeric: tabular-nums;
+}
+.rv-scrub {
+  position: relative;
+  margin-top: 10px;
+}
+.rv-scrub input[type="range"] {
+  width: 100%;
+  accent-color: var(--c-cyan);
+}
+.rv-marks {
+  position: relative;
+  height: 10px;
+  pointer-events: none;
+}
+.rv-marks span {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 10px;
+  background: var(--c-text-mute);
+}
+.rv-marks span[data-kind="gemme"] { background: var(--c-amber); }
+.rv-marks span[data-kind="portail"] { background: var(--c-violet); }
+.rv input:focus-visible,
+.rv select:focus-visible,
+.rv textarea:focus-visible,
+.rv summary:focus-visible,
+.rv-tabs button:focus-visible,
+.rv-notes button:focus-visible,
+.rv-events button:focus-visible {
+  outline: 2px solid var(--c-amber);
+  outline-offset: 1px;
+}
+
+/* ---- repères */
+.rv-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+.rv-stat {
+  background: var(--c-surface-1);
+  padding: 8px 10px;
+  box-shadow: inset 0 0 0 1px var(--c-line-1);
+}
+.rv-stat[data-warn="true"] {
+  box-shadow: inset 0 0 0 1px var(--c-amber);
+}
+.rv-stat dt {
+  margin: 0;
+}
+.rv-stat dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+}
+.rv-stat .rv-stat-sub {
+  font-weight: 400;
+  font-size: 0.8125rem;
+  color: var(--c-text-dim);
+}
+
+/* ---- code */
+.rv-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.rv-tabs button {
+  font-family: var(--f-pixel);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-dim);
+  background: var(--c-surface-2);
+  border: 0;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+.rv-tabs button[aria-selected="true"] {
+  background: var(--c-cyan);
+  color: var(--c-bg-0);
+}
+.rv-tab-n {
+  margin-left: 6px;
+  opacity: 0.85;
+}
+.rv-code .px-editor {
+  margin: 0;
+}
+.rv-caption {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+  color: var(--c-text-dim);
+}
+
+/* ---- événements et quiz */
+.rv-events ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+  font-size: 0.875rem;
+}
+.rv-events li + li {
+  border-top: 1px solid var(--c-line-1);
+}
+.rv-events button {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: var(--c-text);
+  padding: 5px 6px;
+  cursor: pointer;
+  font: inherit;
+}
+.rv-events button:hover {
+  background: var(--c-surface-2);
+}
+.rv-events button[aria-current="true"] {
+  background: var(--c-surface-3);
+  box-shadow: inset 3px 0 0 var(--c-cyan);
+}
+.rv-events button[data-future="true"] {
+  color: var(--c-text-dim);
+}
+.rv-ev-t {
+  font-family: var(--f-code);
+  font-size: 0.75rem;
+  color: var(--c-text-dim);
+}
+.rv-ev-d {
+  font-size: 0.8125rem;
+  color: var(--c-text-dim);
+}
+.rv-empty {
+  padding: 6px;
+  color: var(--c-text-dim);
+}
+.rv-quiz {
+  background: var(--c-surface-1);
+  box-shadow: inset 0 0 0 1px var(--c-line-1);
+  padding: 8px 12px;
+  font-size: 0.9375rem;
+}
+.rv-quiz summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.rv-quiz ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.rv-quiz li[data-ok="true"] { color: var(--c-green); }
+.rv-quiz li[data-ok="false"] { color: var(--c-danger); }
+
+/* ---- grille */
+.rv-grid-top {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+@media (min-width: 1024px) {
+  .rv-grid-top {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--c-bg-1);
+    padding-bottom: 8px;
+  }
+}
+.rv-grid-top h2 {
+  margin: 0;
+}
+.rv-hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--c-text-dim);
+}
+.rv-fit ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.rv-fit li {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr) 3.5rem;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.875rem;
+}
+.rv-fit-pct {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.rv-fit .px-bar {
+  margin: 0;
+}
+.rv-comps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rv-comp-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.rv-comp-name {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.0625rem;
+}
+.rv-observe {
+  margin: 2px 0 8px;
+  font-size: 0.8125rem;
+  color: var(--c-text-dim);
+}
+.rv-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rv-notes button {
+  min-width: 36px;
+  height: 34px;
+  padding: 0 10px;
+  font-family: var(--f-pixel);
+  font-size: 0.8125rem;
+  color: var(--c-text);
+  background: var(--c-surface-3);
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--c-line-2);
+  cursor: pointer;
+}
+.rv-notes button:hover {
+  background: var(--c-line-2);
+}
+.rv-notes button[aria-checked="true"] {
+  background: var(--c-cyan);
+  color: var(--c-bg-0);
+  box-shadow: none;
+}
+.rv-notes .rv-notes-none {
+  font-family: var(--f-read);
+  font-size: 0.875rem;
+}
+.rv-notes .rv-notes-none[aria-checked="true"] {
+  background: var(--c-text-dim);
+}
+.rv-levels {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  font-size: 0.8125rem;
+  color: var(--c-text-dim);
+  display: grid;
+  gap: 2px;
+}
+.rv-levels li[data-on="true"] {
+  color: var(--c-cyan-l);
+  font-weight: 700;
+}
+.rv-levels b {
+  font-family: var(--f-pixel);
+  margin-right: 4px;
+}
+.rv-why {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.rv-input {
+  background: var(--c-bg-0);
+  color: var(--c-text);
+  border: 1px solid var(--c-line-2);
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 0.9375rem;
+}
+.rv-why .rv-input {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.rv-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rv-comment .rv-input {
+  width: 100%;
+  resize: vertical;
+}
+.rv-save {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+@media (min-width: 1024px) {
+  .rv-save {
+    position: sticky;
+    bottom: 0;
+    background: var(--c-bg-1);
+    border-top: 1px solid var(--c-line-1);
+    z-index: 2;
+  }
+}
+.rv-save-msg[data-state="ok"] { color: var(--c-green); }
+.rv-save-msg[data-state="error"] { color: var(--c-danger); }

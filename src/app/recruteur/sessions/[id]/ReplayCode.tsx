@@ -2,7 +2,7 @@
 
 import type * as Monaco from "monaco-editor";
 import { useEffect, useRef } from "react";
-import { loadMonaco } from "@/app/session/CodeEditor";
+import { defineNightTheme, loadMonaco } from "@/app/session/CodeEditor";
 
 /** Monaco en lecture seule : le contenu suit `value` (replay). */
 export function ReplayCode({ value, language, height = 320 }: { value: string; language: "sql" | "python"; height?: number }) {
@@ -15,15 +15,16 @@ export function ReplayCode({ value, language, height = 320 }: { value: string; l
 
   useEffect(() => {
     let disposed = false;
-    const dark = window.matchMedia("(prefers-color-scheme: dark)");
     loadMonaco()
       .then((monaco) => {
         if (disposed || !host.current) return;
+        const codeFont = getComputedStyle(host.current).getPropertyValue("--font-code").trim();
         editor.current = monaco.editor.create(host.current, {
           value: latest.current,
           language,
           readOnly: true,
-          theme: dark.matches ? "vs-dark" : "vs",
+          theme: defineNightTheme(monaco),
+          ...(codeFont ? { fontFamily: `${codeFont}, ui-monospace, monospace` } : {}),
           automaticLayout: true,
           minimap: { enabled: false },
           fontSize: 13,
@@ -45,5 +46,5 @@ export function ReplayCode({ value, language, height = 320 }: { value: string; l
     if (e && e.getValue() !== value) e.setValue(value);
   }, [value]);
 
-  return <div ref={host} style={{ height }} className="overflow-hidden rounded-md border border-zinc-300 dark:border-zinc-700" />;
+  return <div ref={host} style={{ height }} className="px-editor px-edge" />;
 }
