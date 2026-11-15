@@ -541,3 +541,8 @@
     animation: none;
   }
 }
+
+/* Quiz : choix unique = pastille ronde (une case carrée suggérerait plusieurs réponses) */
+.px-choice input[type="radio"] {
+  border-radius: 50%;
+}

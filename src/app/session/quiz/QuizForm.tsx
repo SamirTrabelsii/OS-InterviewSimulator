@@ -62,7 +62,7 @@ export function QuizForm({ questions }: { questions: Question[] }) {
       <PixelPanel tone="cyan">
         <fieldset className="px-choices" key={q.id}>
           <legend className="px-read" style={{ fontWeight: 700, marginBottom: "0.75rem" }}>
-            {q.prompt}
+            {q.prompt} <span className="px-muted" style={{ fontWeight: 400 }}>(une seule réponse)</span>
           </legend>
           {q.choices.map((c) => (
             <label key={c.id} className="px-choice">
@@ -82,6 +82,16 @@ export function QuizForm({ questions }: { questions: Question[] }) {
         </fieldset>
       </PixelPanel>
       {error && <PixelStatus tone="bad">{error}</PixelStatus>}
+      {!confirming && !answered && (
+        <p className="px-muted" role="status" style={{ margin: 0 }}>
+          Choisissez une réponse pour continuer.
+        </p>
+      )}
+      {!confirming && last && answered && !complete && (
+        <p className="px-muted" role="status" style={{ margin: 0 }}>
+          Il reste des questions sans réponse : utilisez « Précédente » pour les compléter avant de valider.
+        </p>
+      )}
       {confirming ? (
         <PixelPanel tone="amber" glow={1} title="Valider vos réponses ?">
           <p className="px-read" role="alert" style={{ marginTop: 0 }}>

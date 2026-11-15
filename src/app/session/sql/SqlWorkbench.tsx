@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { SqlDataset } from "@/engine/content/schemas";
 import { datasetToSql } from "@/engine/sql/setup";
 import { CodeEditor } from "../CodeEditor";
@@ -46,8 +46,21 @@ export function SqlWorkbench({ dataset }: { dataset: SqlDataset }) {
   const draft = useDraft("sql", STARTER, codeRef);
   const [running, setRunning] = useState(false);
   const [run, setRun] = useState<RunResult | null>(null);
+  // Le résultat affiché date d'avant la dernière modification de la requête.
+  const [stale, setStale] = useState(false);
+  const [engineWarm, setEngineWarm] = useState(false);
+  const runPanel = useRef<HTMLDivElement>(null);
   const runningRef = useRef(false);
-  const { submit, pending, result, message, waitSeconds } = useSubmission("/api/session/gemmes/sql");
+  const { submit, pending, result, message, waitSeconds, reset } = useSubmission("/api/session/gemmes/sql");
+  const onEdit = (v: string) => {
+    draft.onChange(v);
+    reset();
+    setStale(true);
+  };
+
+  useEffect(() => {
+    if (run) runPanel.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [run]);
 
   async function execute() {
     if (runningRef.current) return;
@@ -56,6 +69,8 @@ export function SqlWorkbench({ dataset }: { dataset: SqlDataset }) {
     const query = codeRef.current;
     const r = await runInWorker(setup, query);
     setRun(r);
+    setStale(false);
+    setEngineWarm(true);
     trackEvent("code.run", {
       stage: "sql",
       query: query.slice(0, 15_000),
@@ -72,23 +87,33 @@ export function SqlWorkbench({ dataset }: { dataset: SqlDataset }) {
         {draft.initial === null ? (
           <EditorPlaceholder height={280} />
         ) : (
-          <CodeEditor night language="sql" initialValue={draft.initial} onChange={draft.onChange} onRun={() => void execute()} label="Requête SQL" />
+          <CodeEditor night language="sql" initialValue={draft.initial} onChange={onEdit} onRun={() => void execute()} label="Requête SQL" />
         )}
         <div className="px-actions">
           <PixelButton variant="primary" onClick={() => void submit({ query: codeRef.current })} disabled={pending || waitSeconds > 0}>
             {waitSeconds > 0 ? `Patientez ${waitSeconds} s` : pending ? "Vérification…" : "Soumettre"}
           </PixelButton>
           <PixelButton onClick={() => void execute()} disabled={running}>
-            {running ? "Exécution…" : "Exécuter"}
+            {running ? (engineWarm ? "Exécution…" : "Démarrage du moteur SQL…") : "Exécuter"}
           </PixelButton>
         </div>
+        <p className="px-muted" style={{ margin: 0 }}>
+          <strong>Exécuter</strong> : essai libre sur le jeu de données visible (Ctrl + Entrée). <strong>Soumettre</strong> : vérification complète, avec un
+          jeu que vous ne voyez pas ; vous obtenez « X / Y ».
+        </p>
         <DraftNote savedAt={draft.savedAt} />
       </PixelPanel>
 
       <SubmissionStatus result={result} message={message} what="Vérifications réussies" />
 
       {run && (
+        <div ref={runPanel}>
         <PixelPanel tone="violet" title="Résultat de la requête">
+          {stale && (
+            <p className="px-muted" role="status" style={{ marginTop: 0 }}>
+              Résultat de la version précédente de votre requête : exécutez à nouveau pour le mettre à jour.
+            </p>
+          )}
           {run.ok ? (
             <>
               <p className="px-muted" style={{ margin: "0 0 0.5rem" }}>
@@ -124,6 +149,7 @@ export function SqlWorkbench({ dataset }: { dataset: SqlDataset }) {
             </PixelStatus>
           )}
         </PixelPanel>
+        </div>
       )}
     </div>
   );

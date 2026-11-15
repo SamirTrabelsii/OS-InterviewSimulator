@@ -116,6 +116,8 @@ export function CodeEditor({
           tabSize: 4,
           insertSpaces: true,
           scrollBeyondLastLine: false,
+          // La molette sur l'éditeur ne doit pas « piéger » le défilement de la page.
+          scrollbar: { alwaysConsumeMouseWheel: false },
           wordWrap: "on",
           ariaLabel: label,
         });

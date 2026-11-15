@@ -141,21 +141,35 @@ export function useSubmission(url: string) {
     }
   }
 
+  /** Efface l'ancien verdict dès que le code change (sinon une vieille erreur reste affichée). */
+  const reset = useCallback(() => {
+    setResult(null);
+    setMessage(null);
+  }, []);
+
   const waitSeconds = waitUntil > now ? Math.ceil((waitUntil - now) / 1000) : 0;
-  return { submit, pending, result, message, waitSeconds };
+  return { submit, pending, result, message, waitSeconds, reset };
 }
 
 /** Résultat de la dernière soumission : « X / Y » seulement. */
 export function SubmissionStatus({ result, message, what }: { result: CodeResult | null; message: string | null; what: string }) {
+  const box = useRef<HTMLDivElement>(null);
+  // Fenêtre étroite : le verdict est sous l'éditeur, on l'amène à l'écran.
+  useEffect(() => {
+    if (result || message) box.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [result, message]);
   if (message) {
     return (
-      <PixelStatus tone="warn">
-        <p>{message}</p>
-      </PixelStatus>
+      <div ref={box}>
+        <PixelStatus tone="warn">
+          <p>{message}</p>
+        </PixelStatus>
+      </div>
     );
   }
   if (!result) return null;
   return (
+    <div ref={box}>
     <PixelStatus tone={result.ok ? "ok" : "neutral"}>
       <p className="px-status-title">
         {what} : {result.passed} / {result.total}
@@ -170,5 +184,6 @@ export function SubmissionStatus({ result, message, what }: { result: CodeResult
           </p>
         ))}
     </PixelStatus>
+    </div>
   );
 }

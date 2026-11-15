@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { STAGE_KIND } from "@/engine/stages";
 import { deadlineFrom, GEM_IDS, PORTAL_LATEST_MS, remainingMs, type GemId } from "@/engine/timeline";
 import { currentCandidate } from "@/server/candidate/current";
+import { followUpDays } from "@/server/candidate/followup";
 import { loadPublicInstance } from "@/server/content/registry";
 import { Hud, PixelPanel } from "@/ui/pixel/components";
 import { HubWorld } from "@/ui/pixel/world/HubWorld";
@@ -66,6 +67,7 @@ async function SessionScreen() {
           portalSolved={view.portalSolved}
           epilogue={content.meta.epilogue}
           minutes={minutes}
+          followUpDays={followUpDays()}
         />
       </>
     );

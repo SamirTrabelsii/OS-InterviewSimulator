@@ -75,7 +75,7 @@ export function StageFrame({
         <Hud
           timer={deadlineIso ? <Countdown pixel deadlineIso={deadlineIso} serverNowIso={serverNowIso} /> : "--:--"}
           gems={gems}
-          drawer={help ? { label: "Aide", onClick: () => setOpen((o) => !o), expanded: open } : undefined}
+          drawer={help ? { label: "Règles et aide", onClick: () => setOpen((o) => !o), expanded: open } : undefined}
         />
         <div className="px-stage-head">
           <Link href="/session" className="px-link">

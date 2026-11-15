@@ -114,6 +114,7 @@ export function ReportScreen({
   portalSolved,
   epilogue,
   minutes,
+  followUpDays = 7,
 }: {
   company: string;
   retired: boolean;
@@ -122,6 +123,8 @@ export function ReportScreen({
   portalSolved: boolean;
   epilogue: string;
   minutes: number | null;
+  /** Délai annoncé pour le retour du recruteur (CANDIDATE_FOLLOWUP_DAYS). */
+  followUpDays?: number;
 }) {
   return (
     <main className="px-center">
@@ -138,6 +141,14 @@ export function ReportScreen({
             portalOpen={portalSolved}
             label={portalSolved ? "Le quartier du Portail : le Portail est ouvert" : "Le quartier du Portail : le Portail reste fermé"}
           />
+          {!portalSolved && (
+            <PixelPanel tone="violet" title="Le Portail">
+              <p className="px-read" style={{ margin: 0 }}>
+                Le Portail n&apos;a pas été franchi dans le temps imparti. Cela arrive : le recruteur regarde surtout votre démarche, pas seulement le
+                résultat.
+              </p>
+            </PixelPanel>
+          )}
           {portalSolved && (
             <PixelPanel tone="green" glow={2} title="Le Portail s'ouvre">
               <p className="px-read px-story">{epilogue}</p>
@@ -152,7 +163,7 @@ export function ReportScreen({
                     <GemIcon gem={gem} lit={done} />
                     <span>
                       {stageTitles[gem]}
-                      <small>{done ? "Gemme obtenue" : "Gemme non obtenue"}</small>
+                      <small>{done ? "Gemme obtenue" : "Non validée dans le temps imparti"}</small>
                     </span>
                   </li>
                 );
@@ -165,7 +176,7 @@ export function ReportScreen({
             )}
           </PixelPanel>
           <p className="px-read" style={{ textAlign: "center", margin: 0 }}>
-            Merci pour votre participation ! Le recruteur reviendra vers vous.
+            Merci pour votre participation ! Le recruteur reviendra vers vous sous {followUpDays} jours.
           </p>
         </>
       )}

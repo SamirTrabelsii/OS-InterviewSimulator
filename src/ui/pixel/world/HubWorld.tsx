@@ -79,6 +79,8 @@ export function HubWorld({ stages, portal, idleHint, onEnter, reducedMotion }: H
   const canvas = useRef<HTMLCanvasElement>(null);
   const [scale, setScale] = useState(2);
   const [near, setNear] = useState<TargetId | null>(null);
+  // Entrée en cours : la page suivante met quelques secondes à charger, on le dit.
+  const [entering, setEntering] = useState<string | null>(null);
 
   // Valeurs lues par la boucle d'animation (écrites uniquement dans des effets).
   const live = useRef({ stages, portal, reduced, onEnter, near: null as TargetId | null, scale: 2 });
@@ -98,6 +100,8 @@ export function HubWorld({ stages, portal, idleHint, onEnter, reducedMotion }: H
       } catch {
         /* stockage indisponible : on repartira du point de départ */
       }
+      const L = live.current;
+      setEntering(id === "portail" ? L.portal.title : (L.stages.find((s) => s.gem === id)?.title ?? ""));
       if (live.current.onEnter) live.current.onEnter(id);
       else router.push(id === "portail" ? "/session/portail" : `/session/${id}`);
     },
@@ -370,7 +374,11 @@ export function HubWorld({ stages, portal, idleHint, onEnter, reducedMotion }: H
       </div>
 
       <div className="px-world-prompt" aria-live="polite">
-        {near ? (
+        {entering !== null ? (
+          <span className="px-read px-world-hint" role="status">
+            Entrée : {entering}… (quelques secondes)
+          </span>
+        ) : near ? (
           <>
             <PixelButton variant="primary" onClick={() => goToTarget(near)}>
               Entrer · {nearSign}

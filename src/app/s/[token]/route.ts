@@ -27,7 +27,10 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/s/[token]">)
     userAgent: request.headers.get("user-agent") ?? "",
   });
 
-  if (!result.ok) return redirect(`/lien-invalide?raison=${result.reason}`);
+  if (!result.ok) {
+    const quand = result.scheduledAt ? `&quand=${encodeURIComponent(result.scheduledAt.toISOString())}` : "";
+    return redirect(`/lien-invalide?raison=${result.reason}${quand}`);
+  }
 
   const response = redirect("/session");
   response.cookies.set(CANDIDATE_COOKIE, encodeCandidateCookie({ sessionId: result.sessionId, deviceId: result.deviceId }), {

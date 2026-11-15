@@ -23,7 +23,8 @@ dans l'image (voir `.dockerignore`).
 | `portail-groq-api-key`  | `GROQ_API_KEY`       | seulement si Bip est activé (étape 12)    |
 
 Non secrets (variables simples) : `AUTH_GOOGLE_ID`, `RECRUITER_EMAIL_DOMAIN`,
-`APP_URL`, `SANDBOX_USER` (fixé dans l'image).
+`APP_URL`, `CANDIDATE_FOLLOWUP_DAYS` (délai annoncé aux candidats, 7 par défaut),
+`SANDBOX_USER` (fixé dans l'image).
 
 ## 2. Compte de service : accès secret par secret
 

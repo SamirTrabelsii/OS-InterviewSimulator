@@ -12,7 +12,7 @@ export const EVENTS_GRACE_MS = 2 * 60_000;
 
 export type OpenLinkResult =
   | { ok: true; sessionId: string; deviceId: string; newDevice: boolean }
-  | { ok: false; reason: "invalide" | "pas-encore" | "expire" | "termine" };
+  | { ok: false; reason: "invalide" | "pas-encore" | "expire" | "termine"; /** Heure prévue du créneau (pour dire quand revenir). */ scheduledAt?: Date };
 
 /**
  * Valide un lien `/s/<jeton>`. Journalise chaque ouverture ; une ouverture
@@ -37,7 +37,7 @@ export async function openLink(
   if (session.status === "terminee" || session.status === "expiree") return { ok: false, reason: "termine" };
   if (session.deadline && now >= session.deadline) return { ok: false, reason: "termine" };
   if (!linkIsOpen(scheduledAt, now)) {
-    return { ok: false, reason: now < scheduledAt ? "pas-encore" : "expire" };
+    return { ok: false, reason: now < scheduledAt ? "pas-encore" : "expire", scheduledAt };
   }
 
   const [{ known }] = await db

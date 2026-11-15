@@ -18,6 +18,8 @@ export function LogiqueForm({ answerFormat, answerPattern }: { answerFormat: str
     return () => clearInterval(id);
   }, [waitUntil, now]);
 
+  // « 4 chiffres » → on accepte quelques espaces de confort, pas davantage.
+  const maxLen = (Number(answerFormat.match(/\d+/)?.[0]) || 4) * 2;
   const wellFormed = new RegExp(answerPattern).test(answer.replace(/\s+/g, ""));
   const waiting = waitUntil > now;
 
@@ -58,7 +60,7 @@ export function LogiqueForm({ answerFormat, answerPattern }: { answerFormat: str
             onChange={(e) => setAnswer(e.target.value)}
             inputMode="numeric"
             autoComplete="off"
-            maxLength={8}
+            maxLength={maxLen}
           />
         </label>
         {message && (
@@ -68,7 +70,7 @@ export function LogiqueForm({ answerFormat, answerPattern }: { answerFormat: str
         )}
         <div className="px-actions">
           <PixelButton type="submit" variant="primary" disabled={!wellFormed || waiting || pending}>
-            {waiting ? `Patientez ${Math.ceil((waitUntil - now) / 1000)} s` : pending ? "…" : "Essayer"}
+            {waiting ? `Réessayez dans ${Math.ceil((waitUntil - now) / 1000)} s` : pending ? "…" : "Essayer"}
           </PixelButton>
         </div>
       </PixelPanel>

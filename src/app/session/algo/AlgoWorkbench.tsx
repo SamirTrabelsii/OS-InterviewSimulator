@@ -82,7 +82,13 @@ export function AlgoWorkbench({ starterCode, functionName, examples }: { starter
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [run, setRun] = useState<Run | null>(null);
-  const { submit, pending, result, message, waitSeconds } = useSubmission("/api/session/gemmes/algo");
+  const [stale, setStale] = useState(false);
+  const { submit, pending, result, message, waitSeconds, reset } = useSubmission("/api/session/gemmes/algo");
+  const onEdit = (v: string) => {
+    draft.onChange(v);
+    reset();
+    setStale(true);
+  };
 
   useEffect(() => {
     const r = new PythonRunner();
@@ -103,6 +109,7 @@ export function AlgoWorkbench({ starterCode, functionName, examples }: { starter
       examples.map((e) => e.args),
     );
     setRun(r);
+    setStale(false);
     const passed = r.ok ? r.results.filter((c, i) => c.ok && jsonEqual(c.value, examples[i].expected)).length : 0;
     trackEvent("code.run", { stage: "algo", code: code.slice(0, 15_000), passed, total: examples.length, ...(r.ok ? {} : { error: r.error }) });
     setRunning(false);
@@ -118,7 +125,7 @@ export function AlgoWorkbench({ starterCode, functionName, examples }: { starter
             night
             language="python"
             initialValue={draft.initial}
-            onChange={draft.onChange}
+            onChange={onEdit}
             onRun={() => void execute()}
             label="Code Python"
             height={320}
@@ -132,13 +139,17 @@ export function AlgoWorkbench({ starterCode, functionName, examples }: { starter
             {running ? (loading ? "Chargement de Python…" : "Exécution…") : "Tester les exemples"}
           </PixelButton>
         </div>
+        <p className="px-muted" style={{ margin: 0 }}>
+          <strong>Tester les exemples</strong> : essai libre dans votre navigateur (Ctrl + Entrée). <strong>Soumettre</strong> : tests cachés sur le serveur ; vous
+          obtenez « X / Y ».
+        </p>
         {loading && <p className="px-muted">Python se charge dans votre navigateur…</p>}
         <DraftNote savedAt={draft.savedAt} />
       </PixelPanel>
 
       <SubmissionStatus result={result} message={message} what="Tests cachés réussis" />
 
-      {run && !run.ok && (
+      {run && !run.ok && !stale && (
         <PixelStatus tone="bad">
           <p>
             <code>{run.error}</code>
@@ -149,9 +160,14 @@ export function AlgoWorkbench({ starterCode, functionName, examples }: { starter
       <PixelPanel tone="violet">
         <details className="px-details" open>
           <summary>Exemples</summary>
+          {run && stale && (
+            <p className="px-muted" role="status">
+              Résultats de la version précédente de votre code : testez à nouveau pour les mettre à jour.
+            </p>
+          )}
           <ol className="px-cards">
             {examples.map((ex, i) => {
-              const c = run?.ok ? run.results[i] : undefined;
+              const c = run?.ok && !stale ? run.results[i] : undefined;
               const ok = c?.ok && jsonEqual(c.value, ex.expected);
               return (
                 <li key={i} className="px-card" data-state={c ? (ok ? "ok" : "bad") : undefined}>
