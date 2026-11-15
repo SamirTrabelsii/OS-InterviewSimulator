@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { requireRecruiter } from "@/server/auth/guard";
 import { listScenarios } from "@/server/content/registry";
-import { LegacySheet } from "@/ui/pixel/control/LegacySheet";
+import "@/ui/pixel/control/form.css";
 import { NewSlotForm } from "./NewSlotForm";
 
 async function Guarded() {
@@ -13,16 +13,21 @@ async function Guarded() {
 
 export default function NouveauCreneauPage() {
   return (
-    <LegacySheet>
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 p-6">
-        <Link href="/recruteur" className="text-sm underline">
-          ← Créneaux
-        </Link>
-        <h1 className="text-2xl font-semibold">Nouveau créneau</h1>
-        <Suspense fallback={<p className="text-zinc-500">Chargement…</p>}>
-          <Guarded />
-        </Suspense>
-      </main>
-    </LegacySheet>
+    <main className="rc-main fm-narrow">
+      <Link href="/recruteur" className="rv-back">
+        ← Missions
+      </Link>
+      <div>
+        <h1 className="rc-h1">
+          <abbr className="rc-term" title="Mission = créneau d'entretien">
+            Nouvelle mission
+          </abbr>
+        </h1>
+        <p className="rc-sub">Un créneau d&apos;entretien : un scénario, une heure, un ou deux candidats.</p>
+      </div>
+      <Suspense fallback={<p className="rc-sub">Chargement…</p>}>
+        <Guarded />
+      </Suspense>
+    </main>
   );
 }

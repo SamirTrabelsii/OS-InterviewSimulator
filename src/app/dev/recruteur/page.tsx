@@ -4,6 +4,8 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { isDevUiEnabled } from "@/ui/pixel/devOnly";
 import { RecruiterShell } from "@/ui/pixel/control/RecruiterShell";
+import { PixelPanel } from "@/ui/pixel/components";
+import { LiveMap } from "@/ui/pixel/control/LiveMap";
 import { DashboardView, type DashboardSlot } from "@/app/recruteur/DashboardView";
 
 export const metadata: Metadata = { title: "Démo tableau de bord recruteur (dev)", robots: { index: false } };
@@ -63,6 +65,20 @@ async function Demo() {
   return (
     <RecruiterShell>
       <DashboardView slots={slots} titles={titles} evaluated={evaluated} now={now} />
+      <main className="rc-main">
+        <PixelPanel title="Mini-carte (démo)">
+          <LiveMap
+            pins={[
+              { sessionId: "11111111-1111-4111-8111-111111111111", name: "Amel Ben Salah", spot: "sql" },
+              { sessionId: "22222222-2222-4222-8222-222222222222", name: "Yassine Trabelsi", spot: "sql" },
+              { sessionId: "33333333-3333-4333-8333-333333333333", name: "Ines Gharbi", spot: "hub" },
+            ]}
+            done={["quiz"]}
+            portalOpen={false}
+            label="Démo de la mini-carte"
+          />
+        </PixelPanel>
+      </main>
     </RecruiterShell>
   );
 }

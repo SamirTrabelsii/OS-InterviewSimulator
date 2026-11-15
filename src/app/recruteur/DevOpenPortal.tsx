@@ -22,7 +22,7 @@ export function DevOpenPortal({ slotId }: { slotId: string }) {
       {state?.status === "ok" &&
         state.links.map((l) => (
           <p key={l.url}>
-            <span>{l.name} :</span> <CopyLink url={l.url} control />
+            <span>{l.name} :</span> <CopyLink url={l.url} />
           </p>
         ))}
     </div>

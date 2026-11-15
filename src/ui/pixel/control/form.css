@@ -1,0 +1,76 @@
+/* Formulaires de l'espace recruteur (nouvelle mission, connexion). */
+.fm-narrow {
+  width: 100%;
+  max-width: 36rem;
+}
+.fm-center {
+  width: 100%;
+  max-width: 26rem;
+  margin: auto;
+}
+.fm-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.fm-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.fm-field .rv-input {
+  width: 100%;
+}
+.fm-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fm-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--c-surface-2);
+  box-shadow: inset 0 0 0 1px var(--c-line-2);
+  cursor: pointer;
+}
+.fm-choice[data-on="true"] {
+  box-shadow: inset 0 0 0 2px var(--c-cyan);
+}
+.fm-choice input {
+  accent-color: var(--c-cyan);
+}
+.fm-choice:focus-within {
+  outline: 2px solid var(--c-amber);
+  outline-offset: 1px;
+}
+.fm-self {
+  align-self: flex-start;
+}
+.fm-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.fm-link-name {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.fm-full {
+  width: 100%;
+}

@@ -4,11 +4,11 @@ import { useState, useTransition } from "react";
 import { regenerateLinkAction } from "./actions";
 import { CopyLink } from "./CopyLink";
 
-export function RegenerateLink({ sessionId, control = false }: { sessionId: string; control?: boolean }) {
+export function RegenerateLink({ sessionId }: { sessionId: string }) {
   const [url, setUrl] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
-  if (url) return <CopyLink url={url} control={control} />;
+  if (url) return <CopyLink url={url} />;
   return (
     <button
       type="button"
@@ -17,9 +17,9 @@ export function RegenerateLink({ sessionId, control = false }: { sessionId: stri
         if (!confirm("Générer un nouveau lien ? L'ancien ne fonctionnera plus.")) return;
         start(async () => setUrl((await regenerateLinkAction(sessionId)).url));
       }}
-      className={control ? "px-btn px-btn-sm" : "text-sm text-blue-700 underline disabled:opacity-50 dark:text-blue-400"}
+      className="px-btn px-btn-sm"
     >
-      {control ? "Générer un lien" : "Nouveau lien"}
+      Générer un lien
     </button>
   );
 }

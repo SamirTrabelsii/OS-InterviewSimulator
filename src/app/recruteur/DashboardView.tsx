@@ -112,7 +112,7 @@ function SlotCard({
                 <GemRow gems={c.gems} />
                 <span className="rc-cand-act">
                   {c.status === "en_attente" ? (
-                    <RegenerateLink sessionId={c.sessionId} control />
+                    <RegenerateLink sessionId={c.sessionId} />
                   ) : (
                     <PixelLink href={`/recruteur/sessions/${c.sessionId}`} className="px-btn-sm">
                       {state.kind === "a_noter" ? "Noter" : "Replay et grille"}

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { requireRecruiter } from "@/server/auth/guard";
 import { db } from "@/server/db/client";
 import { loadSlotInfo } from "@/server/portal/pg";
-import { LegacySheet } from "@/ui/pixel/control/LegacySheet";
+import { loadSpots } from "@/server/recruteur/spots";
 import { ObserverView } from "./ObserverView";
 
 async function Observe({ params }: { params: Promise<{ id: string }> }) {
@@ -14,15 +14,16 @@ async function Observe({ params }: { params: Promise<{ id: string }> }) {
   if (!id.success) notFound();
   const info = await loadSlotInfo(db(), id.data);
   if (!info) notFound();
+  const spots = await loadSpots(db(), info.members);
   return (
     <>
-      <Link href="/recruteur" className="text-sm underline">
-        ← Créneaux
+      <Link href="/recruteur" className="rv-back">
+        ← Missions
       </Link>
       <ObserverView
         slotId={info.slotId}
         started={info.t0 !== null}
-        candidates={info.members.map((m) => ({ sessionId: m.sessionId, name: m.name, status: m.status, gems: m.gems.length, started: m.startedAt !== null }))}
+        candidates={info.members.map((m) => ({ sessionId: m.sessionId, name: m.name, status: m.status, gems: m.gems, started: m.startedAt !== null, spot: spots[m.sessionId] ?? null }))}
       />
     </>
   );
@@ -30,12 +31,10 @@ async function Observe({ params }: { params: Promise<{ id: string }> }) {
 
 export default function ObservePage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <LegacySheet>
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-6">
-        <Suspense fallback={<p className="text-zinc-500">Chargement…</p>}>
-          <Observe params={params} />
-        </Suspense>
-      </main>
-    </LegacySheet>
+    <main className="rc-main">
+      <Suspense fallback={<p className="rc-sub">Chargement…</p>}>
+        <Observe params={params} />
+      </Suspense>
+    </main>
   );
 }

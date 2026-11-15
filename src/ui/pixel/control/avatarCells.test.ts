@@ -43,6 +43,8 @@ describe("thème de contrôle (recruteur)", () => {
   it("le thème garde le pixel à l'échelle entière 1 et aucune animation", () => {
     const css = readFileSync("src/ui/pixel/control/control.css", "utf8");
     expect(css).toMatch(/--ps:\s*1;/);
-    expect(css).not.toMatch(/@keyframes|animation\s*:/);
+    for (const f of ["control", "review", "form"]) {
+      expect(readFileSync(`src/ui/pixel/control/${f}.css`, "utf8"), f).not.toMatch(/@keyframes|animation\s*:|transition\s*:/);
+    }
   });
 });

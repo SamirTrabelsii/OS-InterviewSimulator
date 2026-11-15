@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { LegacySheet } from "@/ui/pixel/control/LegacySheet";
+import { PixelButton, PixelPanel, PixelStatus } from "@/ui/pixel/components";
+import "@/ui/pixel/control/form.css";
 import { buildProviders } from "@/server/auth/providers";
 import { signInDev, signInWithGoogle } from "../actions";
 
@@ -12,11 +13,7 @@ const ERRORS: Record<string, string> = {
 async function ErrorMessage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
   if (!error) return null;
-  return (
-    <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">
-      {ERRORS[error] ?? "La connexion a échoué. Réessayez."}
-    </p>
-  );
+  return <PixelStatus tone="bad">{ERRORS[error] ?? "La connexion a échoué. Réessayez."}</PixelStatus>;
 }
 
 // Lu à la requête, pas au build : en production les identifiants OAuth
@@ -31,48 +28,49 @@ async function ProviderButtons() {
     <>
       {ids.includes("google") && (
         <form action={signInWithGoogle}>
-          <button className="w-full rounded-md bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900">
+          <PixelButton type="submit" variant="primary" className="fm-full">
             Se connecter avec Google
-          </button>
+          </PixelButton>
         </form>
       )}
       {ids.includes("dev") && (
-        <form action={signInDev} className="space-y-2 rounded-md border border-dashed border-amber-500 p-3">
-          <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Connexion de test (dev uniquement)</p>
+        <form action={signInDev} className="rc-dev fm-stack">
+          <p>Connexion de test (dev uniquement)</p>
           <input
             name="email"
             type="email"
             required
             defaultValue={`recruteur@${process.env.RECRUITER_EMAIL_DOMAIN ?? ""}`}
             aria-label="Email"
-            className="w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 dark:border-zinc-700"
+            className="rv-input"
           />
-          <button className="w-full rounded-md bg-amber-600 px-4 py-2 font-medium text-white hover:bg-amber-500">
+          <PixelButton type="submit" className="fm-full">
             Entrer comme recruteur de test
-          </button>
+          </PixelButton>
         </form>
       )}
-      {ids.length === 0 && (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Aucun fournisseur de connexion n&apos;est configuré (voir .env.example).
-        </p>
-      )}
+      {ids.length === 0 && <PixelStatus tone="warn">Aucun fournisseur de connexion n&apos;est configuré (voir .env.example).</PixelStatus>}
     </>
   );
 }
 
 export default function ConnexionPage({ searchParams }: PageProps<"/recruteur/connexion">) {
   return (
-    <LegacySheet>
-      <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-4 p-6">
-        <h1 className="text-2xl font-semibold">Espace recruteur</h1>
-        <Suspense>
-          <ErrorMessage searchParams={searchParams as Promise<{ error?: string }>} />
-        </Suspense>
-        <Suspense fallback={<p className="text-zinc-500">Chargement…</p>}>
-          <ProviderButtons />
-        </Suspense>
-      </main>
-    </LegacySheet>
+    <main className="rc-main">
+      <div className="fm-center">
+        <PixelPanel title="Salle de contrôle" tone="cyan" glow={1} className="fm-panel">
+          <div>
+            <h1 className="rc-h1">Espace recruteur</h1>
+            <p className="rc-sub">Connexion réservée aux comptes de l&apos;entreprise.</p>
+          </div>
+          <Suspense>
+            <ErrorMessage searchParams={searchParams as Promise<{ error?: string }>} />
+          </Suspense>
+          <Suspense fallback={<p className="rc-sub">Chargement…</p>}>
+            <ProviderButtons />
+          </Suspense>
+        </PixelPanel>
+      </div>
+    </main>
   );
 }

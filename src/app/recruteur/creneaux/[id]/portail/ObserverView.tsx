@@ -2,13 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import type { MapSpot } from "@/engine/recruteur/live";
 import { usePortal } from "@/app/session/portail/usePortal";
+import { PixelButton, PixelPanel, PixelStatus } from "@/ui/pixel/components";
+import { PixelAvatar } from "@/ui/pixel/control/Avatar";
+import { GemRow } from "@/ui/pixel/control/Gems";
+import { LiveMap } from "@/ui/pixel/control/LiveMap";
+import "@/ui/pixel/control/review.css";
+import { LiveRefresh } from "../../../LiveRefresh";
 import { switchToSoloAction } from "../../../actions";
 
-type Candidate = { sessionId: string; name: string; status: string; gems: number; started: boolean };
+type Candidate = { sessionId: string; name: string; status: string; gems: string[]; started: boolean; spot: MapSpot | null };
 
 const PHASE: Record<string, string> = { ferme: "Portail fermé (gemmes en cours)", ouvert: "Portail ouvert", resolu: "Portail résolu", termine: "Temps écoulé" };
 const STATUS: Record<string, string> = { en_attente: "En attente", en_cours: "En cours", terminee: "Terminée", expiree: "Retiré (solo)" };
+const SPOT: Record<MapSpot, string> = { hub: "sur la place", quiz: "au Savoir (quiz)", sql: "aux Archives (SQL)", algo: "au Calcul (algo)", logique: "à l'Intuition (logique)", portail: "au Portail" };
+const GEMS = ["quiz", "sql", "algo", "logique"] as const;
 
 /** Observation en direct, en lecture seule : tout est visible, rien n'est modifiable ici. */
 export function ObserverView({ slotId, started, candidates }: { slotId: string; started: boolean; candidates: Candidate[] }) {
@@ -28,73 +37,97 @@ export function ObserverView({ slotId, started, candidates }: { slotId: string; 
     });
   };
 
+  // Gemmes affichées sur la carte : celles que tous les candidats actifs ont.
+  const shared = GEMS.filter((g) => active.length > 0 && active.every((c) => c.gems.includes(g)));
+  const portalOpen = view?.phase === "ouvert" || view?.phase === "resolu";
+
   return (
-    <section className="space-y-4">
-      <header className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-2xl font-semibold">Observation du Portail</h1>
-        <span className="text-sm text-zinc-600 dark:text-zinc-400">
-          {link === "ok" ? "Connecté en direct" : link === "connexion" ? "Connexion…" : "Connexion perdue, reconnexion…"}
-          {view ? ` · ${PHASE[view.phase]}` : ""}
-        </span>
+    <section className="ob">
+      <header className="rc-page-head">
+        <div>
+          <h1 className="rc-h1">Observation du Portail</h1>
+          <p className="rc-sub">Salle de contrôle en direct : tout est en lecture seule.</p>
+        </div>
+        <div className="ob-badges">
+          <span className="rc-badge" data-tone={link === "ok" ? "green" : "amber"}>
+            <span className="rc-dot" aria-hidden />
+            {link === "ok" ? "Connecté en direct" : link === "connexion" ? "Connexion…" : "Connexion perdue, reconnexion…"}
+          </span>
+          {view && (
+            <span className="rc-badge" data-tone={portalOpen ? "cyan" : "mute"}>
+              {PHASE[view.phase]}
+            </span>
+          )}
+        </div>
       </header>
 
-      <ul className="flex flex-wrap gap-3">
-        {candidates.map((c) => {
-          const player = view?.players?.find((p) => p.id === c.sessionId);
-          return (
-            <li key={c.sessionId} className="rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-800">
-              <p className="font-medium">
-                {c.name}
-                {player && <span className="ml-2 text-xs">{player.role}</span>}
-              </p>
-              <p className="text-zinc-600 dark:text-zinc-400">
-                {STATUS[c.status] ?? c.status} · {c.gems}/4 gemmes · {player ? (player.online ? "connecté au Portail" : "hors ligne") : "—"}
-              </p>
-              {started && active.length > 1 && c.status !== "expiree" && c.started && (
-                <button disabled={pending} onClick={() => solo(c)} className="mt-2 text-xs underline disabled:opacity-50">
-                  Poursuivre seul avec {c.name}
-                </button>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      {message && (
-        <p role="status" className="text-sm">
-          {message}
-        </p>
-      )}
+      <div className="ob-top">
+        <PixelPanel title="Quartier" className="ob-map">
+          <LiveMap
+            pins={candidates.map((c) => ({ sessionId: c.sessionId, name: c.name, spot: c.spot }))}
+            done={shared}
+            portalOpen={portalOpen}
+            label={`Mini-carte : ${candidates.map((c) => `${c.name} ${c.spot ? SPOT[c.spot] : "hors du quartier"}`).join(" ; ")}`}
+          />
+        </PixelPanel>
 
-      {!started && <p className="text-zinc-600 dark:text-zinc-400">Le créneau n&apos;a pas encore démarré.</p>}
-      {view?.phase === "ferme" && (
-        <p className="text-zinc-600 dark:text-zinc-400">Le Portail s&apos;ouvrira quand tous les candidats auront leurs 4 gemmes, au plus tard à T0 + 33 min.</p>
-      )}
+        <ul className="ob-cands">
+          {candidates.map((c) => {
+            const player = view?.players?.find((p) => p.id === c.sessionId);
+            return (
+              <li key={c.sessionId}>
+                <PixelPanel tone={c.status === "en_cours" ? "green" : "violet"} className="ob-cand">
+                  <div className="ob-cand-head">
+                    <PixelAvatar seed={c.sessionId} />
+                    <div className="ob-cand-txt">
+                      <p className="rv-comp-name">
+                        {c.name}
+                        {player && <span className="ob-role">{player.role}</span>}
+                      </p>
+                      <p className="rv-observe">
+                        {STATUS[c.status] ?? c.status} · {c.spot ? SPOT[c.spot] : "—"} · {player ? (player.online ? "connecté au Portail" : "hors ligne") : "—"}
+                      </p>
+                    </div>
+                    <GemRow gems={c.gems} />
+                  </div>
+                  {started && active.length > 1 && c.status !== "expiree" && c.started && (
+                    <PixelButton className="px-btn-sm" disabled={pending} onClick={() => solo(c)}>
+                      Poursuivre seul avec {c.name}
+                    </PixelButton>
+                  )}
+                </PixelPanel>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      {message && <PixelStatus>{message}</PixelStatus>}
+      {!started && <PixelStatus tone="warn">Le créneau n&apos;a pas encore démarré.</PixelStatus>}
+      {view?.phase === "ferme" && <PixelStatus>Le Portail s&apos;ouvrira quand tous les candidats auront leurs 4 gemmes, au plus tard à T0 + 33 min.</PixelStatus>}
 
       {view && (view.phase === "ouvert" || view.phase === "resolu") && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-2">
-            <h2 className="flex items-baseline justify-between font-medium">
-              <span>Code en direct</span>
-              {view.result && (
-                <span className="font-mono">
-                  {view.result.passed} / {view.result.total}
-                </span>
-              )}
-            </h2>
-            <pre aria-label="Code en direct" className="max-h-[32rem] overflow-auto rounded-md bg-zinc-900 p-3 font-mono text-xs text-zinc-100">
+        <div className="ob-portal">
+          <PixelPanel title={`Code en direct${view.result ? ` · ${view.result.passed} / ${view.result.total}` : ""}`} tone="magenta">
+            <pre aria-label="Code en direct" className="ob-pre ob-pre-tall">
               {liveCode ?? view.code}
             </pre>
-          </div>
-          <div className="space-y-2">
-            <h2 className="font-medium">Contexte client</h2>
-            <p className="rounded-lg border-l-4 border-sky-500 bg-sky-50 px-4 py-3 text-sm dark:bg-sky-950">{view.clientContext}</p>
-            <h2 className="font-medium">Logs vus par le copilote</h2>
-            <pre aria-label="Logs" className="max-h-64 overflow-auto whitespace-pre-wrap rounded-md bg-zinc-900 p-3 font-mono text-xs text-zinc-100">
-              {(view.logs ?? []).join("\n")}
-            </pre>
+          </PixelPanel>
+          <div className="ob-side">
+            <PixelPanel title="Contexte client" tone="amber">
+              <p className="ob-context">{view.clientContext}</p>
+            </PixelPanel>
+            <PixelPanel title="Logs vus par le copilote">
+              <pre aria-label="Logs" className="ob-pre">
+                {(view.logs ?? []).join("\n")}
+              </pre>
+            </PixelPanel>
           </div>
         </div>
       )}
+
+      {/* Positions des candidats sur la carte : rechargées toutes les 10 s. */}
+      <LiveRefresh everyMs={10_000} />
     </section>
   );
 }

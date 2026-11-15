@@ -380,14 +380,6 @@
   align-items: center;
   gap: 6px 10px;
 }
-.rv-input {
-  background: var(--c-bg-0);
-  color: var(--c-text);
-  border: 1px solid var(--c-line-2);
-  padding: 6px 8px;
-  font: inherit;
-  font-size: 0.9375rem;
-}
 .rv-why .rv-input {
   flex: 1 1 12rem;
   min-width: 0;
@@ -418,3 +410,91 @@
 }
 .rv-save-msg[data-state="ok"] { color: var(--c-green); }
 .rv-save-msg[data-state="error"] { color: var(--c-danger); }
+
+/* ---- observation du Portail */
+.ob {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+}
+.ob-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ob-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .ob-top {
+    grid-template-columns: minmax(0, 692px) minmax(0, 1fr);
+  }
+}
+.ob-cands {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ob-cand-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-bottom: 8px;
+}
+.ob-cand-txt {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+.ob-cand-txt .rv-observe {
+  margin: 2px 0 0;
+}
+.ob-role {
+  margin-left: 8px;
+  font-family: var(--f-pixel);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-cyan);
+}
+.ob-portal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+@media (min-width: 1024px) {
+  .ob-portal {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+}
+.ob-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ob-pre {
+  margin: 0;
+  max-height: 16rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  background: var(--c-bg-0);
+  padding: 10px;
+  font-family: var(--f-code);
+  font-size: 0.8125rem;
+  color: var(--c-text);
+}
+.ob-pre-tall {
+  max-height: 32rem;
+  white-space: pre;
+}
+.ob-context {
+  margin: 0;
+  font-size: 0.9375rem;
+}

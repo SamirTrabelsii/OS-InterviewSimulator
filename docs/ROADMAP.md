@@ -300,7 +300,7 @@ Parties (une à la fois, arrêt et revue entre chaque) :
      lecture, aucune animation ; `RecruiterShell` ; `PixelAvatar` ;
      `GemRow`), `src/app/recruteur/layout.tsx` (en-tête, navigation,
      compte). Les pages pas encore refaites gardent leur apparence d'origine
-     dans `LegacySheet` (transitoire, retiré en 5c et 5d).
+     dans `LegacySheet` (transitoire, supprimé en 5d).
    - **5b Tableau de bord ✅ (2026-11-15)** : `/recruteur` en
      « missions » (`DashboardView`) : compteurs (en direct, à noter, à
      venir), puis sections En direct / À venir / Passées, une carte par
@@ -322,6 +322,18 @@ Parties (une à la fois, arrêt et revue entre chaque) :
      « Aller à », justification), commentaire, « Enregistrer » fixé en bas
      (seul bouton principal). Logique, API et notation inchangées ;
      `LegacySheet` retiré de cette page.
+   - **5d Observation, création, connexion ✅ (2026-11-15)** :
+     `/recruteur/creneaux/[id]/portail` avec la mini-carte du quartier
+     (`LiveMap` : même décor que le candidat, image fixe, une pastille par
+     candidat devant son écran ; `src/engine/recruteur/live.ts` situe le
+     candidat avec `stateAt`, `src/server/recruteur/spots.ts` ne lit que les
+     événements d'écran ; gemmes affichées = celles de tous les candidats),
+     cartes candidats, code et logs en direct, « Poursuivre seul » inchangé,
+     rechargement des positions toutes les 10 s. Nouvelle mission et
+     connexion refaites (`form.css`). `LegacySheet` supprimé : tout l'espace
+     recruteur est en thème de contrôle. Liens candidat : « Générer un
+     lien » / « Copier le lien ». La démo `/dev/recruteur` montre aussi la
+     mini-carte.
 
 **Terminé quand** : aucun changement de logique serveur ; `npm test`,
 `npm run lint`, `npm run test:build` passent ; parcours complet candidat
