@@ -20,6 +20,7 @@ type ReplayData = {
   gems: string[];
   startedAt: string | null;
   events: ReplayEvent[];
+  quiz: { id: string; prompt: string; choices: { id: string; label: string }[] }[] | null;
 };
 type Entry = { note: Note; moment: number | null; why: string };
 type Grid = Record<string, Entry>;
@@ -204,7 +205,7 @@ export function ReviewClient({ sessionId }: { sessionId: string }) {
           </p>
         </PixelPanel>
 
-        {quiz && <QuizCorrection payload={quiz.payload} />}
+        {quiz && <QuizCorrection payload={quiz.payload} questions={data.quiz} />}
 
         <PixelPanel title="Événements" className="rv-events">
           <ol>
@@ -333,7 +334,7 @@ function Stat({ label, value, sub, warn }: { label: string; value: string; sub?:
 }
 
 /** Correction du quiz : visible du recruteur seulement. */
-function QuizCorrection({ payload }: { payload: Record<string, unknown> }) {
+function QuizCorrection({ payload, questions }: { payload: Record<string, unknown>; questions: ReplayData["quiz"] }) {
   const details = (payload.details ?? {}) as Record<string, { given: string; expected: string; ok: boolean }>;
   return (
     <details className="rv-quiz">
@@ -341,11 +342,16 @@ function QuizCorrection({ payload }: { payload: Record<string, unknown> }) {
         Correction du quiz : {String(payload.correct)} / {String(payload.total)}
       </summary>
       <ul>
-        {Object.entries(details).map(([q, d]) => (
-          <li key={q} data-ok={d.ok}>
-            {q} : {d.given} {d.ok ? "✓" : `✗ (attendu ${d.expected})`}
-          </li>
-        ))}
+        {Object.entries(details).map(([q, d]) => {
+          // Texte tiré du sujet figé du candidat ; à défaut (ancienne session), les identifiants bruts.
+          const question = questions?.find((x) => x.id === q);
+          const label = (id: string) => question?.choices.find((c) => c.id === id)?.label ?? id;
+          return (
+            <li key={q} data-ok={d.ok}>
+              {question ? question.prompt : q} : {label(d.given)} {d.ok ? "✓" : `✗ (attendu : ${label(d.expected)})`}
+            </li>
+          );
+        })}
       </ul>
     </details>
   );

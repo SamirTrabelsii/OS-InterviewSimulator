@@ -3,7 +3,9 @@ import { STAGE_KIND } from "@/engine/stages";
 import { deadlineFrom, GEM_IDS, PORTAL_LATEST_MS, remainingMs, type GemId } from "@/engine/timeline";
 import { currentCandidate } from "@/server/candidate/current";
 import { followUpDays } from "@/server/candidate/followup";
-import { loadPublicInstance } from "@/server/content/registry";
+import { listScenarios } from "@/server/content/registry";
+import { loadSessionPublic } from "@/server/content/subject";
+import { db } from "@/server/db/client";
 import { Hud, PixelPanel } from "@/ui/pixel/components";
 import { HubWorld } from "@/ui/pixel/world/HubWorld";
 import { AutoRefresh } from "./AutoRefresh";
@@ -25,16 +27,18 @@ async function SessionScreen() {
     );
   }
   const { view, now } = candidate;
-  const content = loadPublicInstance(view.scenarioId, view.seed);
 
   if (view.phase === "attente") {
+    // Avant le démarrage, le sujet n'est pas encore figé : l'accueil n'a besoin que de la présentation du scénario.
+    const meta = listScenarios().find((m) => m.id === view.scenarioId);
+    if (!meta) throw new Error(`Scénario inconnu : ${view.scenarioId}`);
     return (
       <>
         <EventTracker stage="accueil" />
         <WelcomeScreen
-          company={content.meta.company}
-          title={content.meta.title}
-          pitch={content.meta.pitch}
+          company={meta.company}
+          title={meta.title}
+          pitch={meta.pitch}
           mode={view.mode}
           callUrl={view.callUrl}
           startedClock={
@@ -47,6 +51,8 @@ async function SessionScreen() {
       </>
     );
   }
+
+  const content = await loadSessionPublic(db(), view);
 
   if (view.phase === "termine") {
     const minutes =

@@ -28,7 +28,7 @@ export async function loadSlotInfo(db: Db, slotId: string): Promise<SlotInfo | n
   const members: Member[] = rows.map((r) => ({ sessionId: r.sessionId, name: r.name, gems: r.gems, status: r.status, startedAt: r.startedAt }));
   // Même graine pour les deux candidats d'un binôme ? Non : chaque session a la sienne.
   // L'énigme du Portail est commune : elle dérive de la graine de la 1re session.
-  return { slotId, scenario: slot.scenario, seed: rows[0].seed, t0: slot.startedAt, members, callUrl: slot.callUrl };
+  return { slotId, scenario: slot.scenario, seed: rows[0].seed, subjectSessionId: rows[0].sessionId, t0: slot.startedAt, members, callUrl: slot.callUrl };
 }
 
 /** Derniers messages du chat de secours du créneau, relus du journal (les plus anciens d'abord). */

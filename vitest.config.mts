@@ -8,7 +8,7 @@ if (!process.env.DATABASE_URL && existsSync(".env.local")) {
 }
 
 // Tests qui lancent de vrais processus du bac à sable (Pyodide, sql.js).
-const SANDBOX_TESTS = ["src/server/sandbox/**/*.test.ts", "src/server/grading/**/*.test.ts", "src/app/api/session/gemmes/code.test.ts"];
+const SANDBOX_TESTS = ["src/server/sandbox/**/*.test.ts", "src/server/grading/**/*.test.ts", "src/app/api/session/gemmes/code.test.ts", "src/app/api/session/gemmes/subject-leak.test.ts"];
 
 export default defineConfig({
   resolve: {

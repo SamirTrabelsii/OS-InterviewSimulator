@@ -4,6 +4,7 @@ import * as schema from "@/server/db/schema";
 import type { Db } from "@/server/slots/service";
 import { hashToken } from "@/server/tokens";
 import { appendEvents } from "./events";
+import { freezeSubject } from "@/server/content/subject";
 
 /** Délai de grâce pour les derniers événements client après la fin (réseau lent). */
 export const EVENTS_GRACE_MS = 2 * 60_000;
@@ -211,7 +212,7 @@ export async function startSession(db: Db, sessionId: string, now: Date): Promis
     const { session, slot } = row;
 
     if (session.startedAt && session.deadline) {
-      return { t0: slot.startedAt ?? session.startedAt, deadline: session.deadline, started: false };
+      return { t0: slot.startedAt ?? session.startedAt, deadline: session.deadline, started: false, scenarioId: slot.scenario, seed: session.seed };
     }
     if (!canStart(slot.scheduledAt, now)) {
       throw new SessionError(now < slot.scheduledAt ? "pas-encore" : "hors-delai", "Démarrage impossible maintenant");
@@ -227,10 +228,12 @@ export async function startSession(db: Db, sessionId: string, now: Date): Promis
       .update(schema.sessions)
       .set({ startedAt: now, deadline, status: "en_cours" })
       .where(eq(schema.sessions.id, sessionId));
-    return { t0, deadline, started: true };
+    return { t0, deadline, started: true, scenarioId: slot.scenario, seed: session.seed };
   });
 
   if (result.started) {
+    // Fige le sujet reçu par le candidat : le contenu pourra changer ensuite sans l'affecter.
+    await freezeSubject(db, { sessionId, scenarioId: result.scenarioId, seed: result.seed });
     await appendEvents(db, sessionId, "systeme", [
       {
         type: "session.start",

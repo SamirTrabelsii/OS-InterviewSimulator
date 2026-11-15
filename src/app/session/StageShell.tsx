@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import type { GemId } from "@/engine/timeline";
 import { GEM_IDS } from "@/engine/timeline";
 import { currentCandidate } from "@/server/candidate/current";
-import { loadPublicInstance } from "@/server/content/registry";
+import { loadSessionPublic } from "@/server/content/subject";
+import { db } from "@/server/db/client";
 import type { PublicInstance } from "@/engine/content/schemas";
 import { StageFrame } from "./StageFrame";
 
@@ -29,7 +30,7 @@ export async function StageShell({
   const { view, now } = candidate;
   if (view.phase === "attente" || view.phase === "termine") redirect("/session");
 
-  const content = loadPublicInstance(view.scenarioId, view.seed);
+  const content = await loadSessionPublic(db(), view);
   const done = view.gems.includes(gem);
   return (
     <StageFrame

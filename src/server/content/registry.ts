@@ -22,7 +22,7 @@ function definition(scenarioId: string): ScenarioDefinition {
 const CACHE_SIZE = 16;
 const cache = new Map<string, ScenarioInstance>();
 
-function deepFreeze<T>(value: T): T {
+export function deepFreeze<T>(value: T): T {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
     Object.freeze(value);
     for (const v of Object.values(value)) deepFreeze(v);
@@ -30,7 +30,17 @@ function deepFreeze<T>(value: T): T {
   return value;
 }
 
-/** Instance complète, avec solutions. Usage serveur uniquement (validateurs). Gelée. */
+/** Génère l'instance depuis le contenu ACTUEL (jamais en cache). Sert à figer le sujet d'une session. */
+export function buildFromContent(scenarioId: string, seed: Seed): ScenarioInstance {
+  return buildInstance(definition(scenarioId), seed);
+}
+
+/**
+ * Instance générée depuis le contenu actuel, sans passer par la session.
+ * Réservé aux tests et aux outils : le code applicatif doit lire le sujet
+ * figé de la session (subject.ts), sinon un changement de contenu modifie
+ * le sujet d'un candidat en cours.
+ */
 export function loadInstance(scenarioId: string, seed: Seed): ScenarioInstance {
   const key = `${scenarioId}:${String(seed)}`;
   const hit = cache.get(key);

@@ -40,7 +40,13 @@ import { deadlineFrom, portalOpenAt, PORTAL_LATEST_MS } from "@/engine/timeline"
 export class GradeRefused extends Error {}
 
 export type Member = { sessionId: string; name: string; gems: string[]; status: string; startedAt: Date | null };
-export type SlotInfo = { slotId: string; scenario: string; seed: bigint; t0: Date | null; members: Member[]; callUrl?: string | null };
+export type SlotInfo = {
+  slotId: string;
+  scenario: string;
+  seed: bigint;
+  /** Session dont le sujet figé fournit le Portail du créneau (la 1re du créneau). */
+  subjectSessionId?: string;
+  t0: Date | null; members: Member[]; callUrl?: string | null };
 
 export type PersistedRoom = { code: string; epoch: number; driverSessionId: string | null; openedAt: Date | null; solvedAt: Date | null };
 

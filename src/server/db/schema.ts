@@ -45,6 +45,9 @@ export const sessions = pgTable(
     candidateName: text("candidate_name").notNull(),
     tokenHash: text("token_hash").notNull(),
     seed: bigint("seed", { mode: "bigint" }).notNull(),
+    // Sujet figé au démarrage : { version, instance } (voir src/server/content/subject.ts).
+    // Null tant que la session n'a pas démarré ; les anciennes sessions sont complétées à la première lecture.
+    subject: jsonb("subject"),
     status: sessionStatus("status").notNull().default("en_attente"),
     startedAt: timestamp("started_at", { withTimezone: true }),
     deadline: timestamp("deadline", { withTimezone: true }),

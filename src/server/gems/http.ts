@@ -2,7 +2,8 @@ import "server-only";
 import { MalformedAnswerError } from "@/engine/validators/errors";
 import { currentCandidate } from "@/server/candidate/current";
 import { SessionError } from "@/server/candidate/session";
-import { loadInstance } from "@/server/content/registry";
+import { loadSessionInstance } from "@/server/content/subject";
+import { db } from "@/server/db/client";
 import { SandboxUnavailableError } from "@/server/grading/sql";
 import { TooSoonError } from "./service";
 import type { CandidateView } from "@/server/candidate/session";
@@ -29,7 +30,7 @@ export async function handleSubmission(
   }
 
   try {
-    const instance = loadInstance(candidate.view.scenarioId, candidate.view.seed);
+    const instance = await loadSessionInstance(db(), candidate.view);
     return json(await run({ view: candidate.view, instance, body, now: candidate.now }));
   } catch (err) {
     if (err instanceof MalformedAnswerError) return json({ error: err.message }, 400);

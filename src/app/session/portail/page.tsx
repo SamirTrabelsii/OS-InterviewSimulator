@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { currentCandidate } from "@/server/candidate/current";
-import { loadPublicInstance } from "@/server/content/registry";
+import { loadSessionPublic } from "@/server/content/subject";
+import { db } from "@/server/db/client";
 import { Backdrop } from "@/ui/pixel/world/Backdrop";
 import { StageLoading } from "../StageLoading";
 import { PortalClient } from "./PortalClient";
@@ -11,7 +12,7 @@ async function PortailScreen() {
   if (!candidate) redirect("/session");
   const { view } = candidate;
   if (view.phase === "attente" || view.phase === "termine") redirect("/session");
-  const content = loadPublicInstance(view.scenarioId, view.seed);
+  const content = await loadSessionPublic(db(), view);
   // Contenu PUBLIC et commun aux deux rôles ; le code, les logs et le ticket
   // n'arrivent que par la socket, filtrés selon le rôle.
   return <PortalClient epilogue={content.meta.epilogue} />;

@@ -365,6 +365,11 @@ serveur.
 - Un PRNG déterministe (mulberry32) initialisé par `sessions.seed`
   produit : variante choisie, jeu de données SQL, valeurs de l'énigme
   logique, jeu caché (`seed'`).
+- Le sujet généré (partie publique et privée) est **figé** dans
+  `sessions.subject` au démarrage de la session (`src/server/content/subject.ts`) :
+  rechargement, correction, Portail et revue recruteur relisent cette copie,
+  jamais le contenu actuel. Une session sans sujet (antérieure à la colonne)
+  est figée à sa première lecture.
 - Le moteur (`/src`) ne connaît aucun scénario par son nom ; il charge
   un registre.
 
@@ -392,7 +397,7 @@ et moins exploitable pour noter.
 | Table | Rôle |
 |---|---|
 | `slots` | créneau : scénario, heure, mode (solo/binôme), statut |
-| `sessions` | un candidat dans un créneau : hash du jeton, graine, `started_at`, `deadline`, gemmes obtenues |
+| `sessions` | un candidat dans un créneau : hash du jeton, graine, sujet figé, `started_at`, `deadline`, gemmes obtenues |
 | `events` | journal d'actions (replay) |
 | `portal_rooms` | état persistant du Portail : code courant, pilote, résultat |
 | `evaluations` | grille de compétences + adéquation par profil, par recruteur |

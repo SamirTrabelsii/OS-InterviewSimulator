@@ -7,6 +7,7 @@ import { evaluate, type Resultat } from "@/engine/grille/adequation";
 import type { Notes } from "@/engine/grille/types";
 import type { ReplayEvent } from "@/engine/replay";
 import * as schema from "@/server/db/schema";
+import { loadStoredSubject } from "@/server/content/subject";
 import type { Db } from "@/server/slots/service";
 
 // ---------------------------------------------------------------- entrée
@@ -102,6 +103,11 @@ export type ReplayData = {
   /** Début de la session (ISO) : origine des temps `t` des événements. */
   startedAt: string | null;
   events: ReplayEvent[];
+  /**
+   * Questions du quiz telles que le candidat les a reçues (sujet figé au démarrage), pour lire la
+   * correction. Null si la session n'a pas de sujet figé (jamais démarrée, ou antérieure au figeage).
+   */
+  quiz: { id: string; prompt: string; choices: { id: string; label: string }[] }[] | null;
 };
 
 /** Événements d'une session, avec des temps relatifs au début de la session. */
@@ -115,6 +121,7 @@ export async function loadReplay(db: Db, sessionId: string): Promise<ReplayData 
   if (!row) return null;
   const rows = await db.select().from(schema.events).where(eq(schema.events.sessionId, sessionId)).orderBy(asc(schema.events.ts), asc(schema.events.seq));
   // Origine : début de la session ; à défaut (jamais démarrée), premier événement.
+  const subject = await loadStoredSubject(db, sessionId);
   const origin = row.session.startedAt?.getTime() ?? rows[0]?.ts.getTime() ?? 0;
   return {
     sessionId,
@@ -125,6 +132,9 @@ export async function loadReplay(db: Db, sessionId: string): Promise<ReplayData 
     status: row.session.status,
     gems: row.session.gems,
     startedAt: row.session.startedAt?.toISOString() ?? null,
+    quiz: subject
+      ? subject.stages.quiz.public.questions.map((q) => ({ id: q.id, prompt: q.prompt, choices: q.choices.map((c) => ({ id: c.id, label: c.label })) }))
+      : null,
     events: rows.map((e) => ({
       seq: e.seq,
       t: Math.max(0, e.ts.getTime() - origin),
