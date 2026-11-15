@@ -77,6 +77,10 @@ describe("palette fermée du quartier", () => {
     const hexes = [...css.matchAll(/#[0-9a-f]{6}\b/gi)].map((m) => m[0].toLowerCase());
     for (const h of hexes) expect(allowed.has(h), h).toBe(true);
   });
+  it("globals.css (repli avant le thème) n'utilise que des couleurs de la palette", () => {
+    const g = readFileSync("src/app/globals.css", "utf8");
+    for (const m of g.matchAll(/#[0-9a-f]{6}/gi)) expect(allowed.has(m[0].toLowerCase()), m[0]).toBe(true);
+  });
   it("le thème Monaco n'utilise que des couleurs de la palette", () => {
     const vals = [
       ...Object.values(NIGHT_THEME_DEF.colors),
