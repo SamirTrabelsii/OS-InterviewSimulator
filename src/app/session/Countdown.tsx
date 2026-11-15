@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
  * arrive après la fin. On corrige seulement l'écart d'horloge du poste
  * avec l'heure serveur reçue au chargement.
  */
-export function Countdown({ deadlineIso, serverNowIso }: { deadlineIso: string; serverNowIso: string }) {
+export function Countdown({ deadlineIso, serverNowIso, pixel = false }: { deadlineIso: string; serverNowIso: string; pixel?: boolean }) {
   const router = useRouter();
   const [offset] = useState(() => Date.parse(serverNowIso) - Date.now());
   const [left, setLeft] = useState(() => Date.parse(deadlineIso) - (Date.now() + offset));
@@ -32,7 +32,8 @@ export function Countdown({ deadlineIso, serverNowIso }: { deadlineIso: string; 
     <span
       role="timer"
       aria-label={`Temps restant : ${mm} minutes ${ss} secondes`}
-      className={`font-mono text-2xl tabular-nums ${total < 300 ? "text-red-600 dark:text-red-400" : ""}`}
+      data-urgent={total < 300}
+      className={pixel ? "px-countdown" : `font-mono text-2xl tabular-nums ${total < 300 ? "text-red-600 dark:text-red-400" : ""}`}
     >
       {mm}:{ss}
     </span>

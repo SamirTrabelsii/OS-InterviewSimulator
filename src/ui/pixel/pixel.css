@@ -294,3 +294,83 @@
   animation: none !important;
   transition: none !important;
 }
+
+/* Monde du hub */
+.px-world {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--px) * 4);
+  width: 100%;
+}
+.px-world-stage {
+  position: relative;
+  background: var(--c-bg-0);
+  touch-action: manipulation;
+  cursor: crosshair;
+  flex: none;
+}
+.px-world-stage canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+.px-hit {
+  position: absolute;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.px-hit:hover:not([role="img"]) {
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
+}
+.px-hit:focus-visible {
+  outline: calc(var(--px) * 2) solid var(--c-amber);
+  outline-offset: calc(var(--px) * -1);
+}
+.px-sign {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-family: var(--f-pixel);
+  font-size: calc(var(--wpx) * 7);
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: var(--glow, var(--c-cyan));
+}
+.px-sign[data-done="true"] {
+  color: var(--c-line-3);
+}
+.px-world-prompt {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 6);
+  min-height: calc(var(--px) * 26);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.px-world-hint,
+.px-world-name {
+  color: var(--c-text-dim);
+  font-size: 1rem;
+}
+.px-world-keys {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--c-text-mute);
+  font-family: var(--f-read);
+  text-align: center;
+}
+
+/* Chrono dans le HUD (composant Countdown en mode pixel) */
+.px-countdown {
+  font-variant-numeric: tabular-nums;
+}
+.px-countdown[data-urgent="true"] {
+  color: var(--c-amber);
+}

@@ -1,6 +1,6 @@
-/** Résolution logique du monde pixel (hub, partie 2) : fixe, jamais redimensionnée. */
-export const WORLD_W = 320;
-export const WORLD_H = 200;
+import { WORLD_H, WORLD_W } from "@/engine/hub/world";
+
+export { WORLD_H, WORLD_W };
 
 /**
  * Plus grand facteur ENTIER qui fait tenir la résolution logique dans la

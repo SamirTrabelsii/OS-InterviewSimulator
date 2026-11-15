@@ -205,8 +205,21 @@ Parties (une à la fois, arrêt et revue entre chaque) :
    existant modifié ; `NightShell` n'est pas encore appliqué au parcours
    candidat (partie 2 et 3). Tests : échelle entière, contrastes AA de la
    palette, existence des sprites, page dev désactivée en production.
-2. **Monde du hub** — quartier vu de dessus, bâtiments des 4 gemmes,
-   Portail, personnage, déplacement, sprites remplaçables.
+2. **Monde du hub** ✅ (2026-11-15) — quartier vu de dessus, bâtiments
+   des 4 gemmes, Portail, personnage, déplacement, sprites remplaçables.
+   Réalisé : règles pures dans `src/engine/hub/world.ts` (monde 320 × 200,
+   collisions avec glissement, chemins A*, proximité des portes ; testées),
+   rendu canvas dans `src/ui/pixel/world/` (décor fixe, lumières par
+   paliers, gemmes flottantes, Portail à 4 emplacements, tri en profondeur),
+   `HubWorld` (échelle entière, flèches/ZQSD/WASD, clic sur un bâtiment ou
+   sur le sol, invite unique « Entrer · NOM », une zone cliquable et
+   focalisable par bâtiment, position mémorisée au retour d'une épreuve,
+   animations réduites : pas de clignotement, gemmes immobiles, trajets
+   instantanés). Graphismes dans `public/sprites/world` (catalogue
+   `atlas.ts`, substituts générés par `scripts/make-world-sprites.mjs`).
+   Branché sur `/session` (HUD réduit : chrono, gemmes ; pas de Bip tant
+   qu'il est désactivé) ; accueil et fin inchangés (partie 4). Démo :
+   `/dev/hub` (404 en production).
 3. **Épreuves et Portail** — quiz, SQL, algo, logique et binôme habillés
    avec les composants ; tiroir Bip/indices ; un bouton principal.
 4. **Accueil et finitions** — accueil, fin, états d'erreur, animations,
