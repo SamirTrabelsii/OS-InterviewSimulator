@@ -2,6 +2,7 @@
 
 import type * as Monaco from "monaco-editor";
 import { useEffect, useRef, useState } from "react";
+import { NIGHT_THEME_DEF } from "@/ui/pixel/monacoTheme";
 
 // Monaco est servi par l'application (public/vendor/monaco, copié depuis
 // node_modules par scripts/copy-vendor.mjs), jamais par un CDN. On charge
@@ -14,29 +15,7 @@ type AmdRequire = ((deps: string[], ok: () => void, err: (e: unknown) => void) =
 type MonacoWindow = { require?: AmdRequire; monaco?: typeof Monaco };
 
 const NIGHT_THEME = "portail-night";
-// Palette du thème nuit (src/ui/pixel/tokens.css), en dur : Monaco n'accepte pas de variables CSS.
-const NIGHT_DEF: Monaco.editor.IStandaloneThemeData = {
-  base: "vs-dark",
-  inherit: true,
-  rules: [
-    { token: "keyword", foreground: "ff4fd8" },
-    { token: "string", foreground: "4dffa6" },
-    { token: "number", foreground: "ffb547" },
-    { token: "comment", foreground: "5a6196", fontStyle: "italic" },
-    { token: "type", foreground: "3ef0ff" },
-  ],
-  colors: {
-    "editor.background": "#07080f",
-    "editor.foreground": "#e8e6ff",
-    "editorLineNumber.foreground": "#3a4170",
-    "editorLineNumber.activeForeground": "#a7a3d1",
-    "editor.lineHighlightBackground": "#10132a",
-    "editor.selectionBackground": "#3a4170",
-    "editorCursor.foreground": "#3ef0ff",
-    "editorWidget.background": "#151933",
-    "editorIndentGuide.background1": "#1a1d36",
-  },
-};
+const NIGHT_DEF: Monaco.editor.IStandaloneThemeData = NIGHT_THEME_DEF;
 
 /** Enregistre le thème nuit dans Monaco et renvoie son nom (aussi utilisé par le replay recruteur). */
 export function defineNightTheme(monaco: typeof Monaco): string {

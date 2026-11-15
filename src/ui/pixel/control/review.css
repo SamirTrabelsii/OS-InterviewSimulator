@@ -410,6 +410,7 @@
 }
 .rv-save-msg[data-state="ok"] { color: var(--c-green); }
 .rv-save-msg[data-state="error"] { color: var(--c-danger); }
+.rv-save-msg[data-state="error"]::before { content: "✕ "; }
 
 /* ---- observation du Portail */
 .ob {

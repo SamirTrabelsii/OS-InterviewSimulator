@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { contrastRatio } from "./contrast";
 import { isDevUiEnabled } from "./devOnly";
+import { NIGHT_THEME_DEF } from "./monacoTheme";
+import { PALETTE } from "./world/art/palette";
 import { integerScale } from "./scale";
 import { SPRITES } from "./sprites";
 
@@ -66,5 +68,20 @@ describe("page de démonstration", () => {
     expect(isDevUiEnabled("production")).toBe(false);
     expect(isDevUiEnabled("development")).toBe(true);
     expect(isDevUiEnabled("test")).toBe(true);
+  });
+});
+
+describe("palette fermée du quartier", () => {
+  const allowed = new Set(Object.values(PALETTE).map((h) => h.toLowerCase()));
+  it("tokens.css n'utilise que des couleurs de la palette", () => {
+    const hexes = [...css.matchAll(/#[0-9a-f]{6}\b/gi)].map((m) => m[0].toLowerCase());
+    for (const h of hexes) expect(allowed.has(h), h).toBe(true);
+  });
+  it("le thème Monaco n'utilise que des couleurs de la palette", () => {
+    const vals = [
+      ...Object.values(NIGHT_THEME_DEF.colors),
+      ...NIGHT_THEME_DEF.rules.map((r) => `#${r.foreground}`),
+    ];
+    for (const h of vals) expect(allowed.has(h.toLowerCase()), h).toBe(true);
   });
 });

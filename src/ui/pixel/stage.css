@@ -546,3 +546,16 @@
 .px-choice input[type="radio"] {
   border-radius: 50%;
 }
+
+/* Une erreur n'est jamais signalée par la couleur seule : icône et libellé (palette sans rouge). */
+.px-status[data-tone="bad"]::before {
+  content: "✕ Erreur";
+  display: block;
+  margin-bottom: calc(var(--px) * 2);
+  font-family: var(--f-ui);
+  font-weight: 700;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-danger);
+}

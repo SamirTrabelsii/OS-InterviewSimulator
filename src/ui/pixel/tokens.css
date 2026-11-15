@@ -1,42 +1,46 @@
 /*
  * Jetons visuels du côté candidat (pixel art nocturne).
  * Tout est scopé sous .theme-night : le côté recruteur n'est pas touché.
- * Source unique de la palette : les tests de contraste lisent ce fichier.
+ * Chaque couleur vient de la palette fermée du quartier
+ * (src/ui/pixel/world/art/palette.ts) : un test vérifie qu'aucune n'en sort ;
+ * les tests de contraste lisent ce fichier.
+ * « danger » reprend le magenta vif (la palette n'a pas de rouge) : une erreur
+ * est donc toujours signalée par une icône et un libellé, jamais par la couleur seule.
  */
 .theme-night {
   /* Fonds et surfaces (du plus sombre au plus clair) */
   --c-bg-0: #07080f;
-  --c-bg-1: #0a0b16;
+  --c-bg-1: #0b0c18;
   --c-bg-2: #10132a;
-  --c-surface-1: #151933;
-  --c-surface-2: #1a1d36;
-  --c-surface-3: #22274a;
+  --c-surface-1: #171b36;
+  --c-surface-2: #171b36;
+  --c-surface-3: #1f2447;
 
   /* Traits */
-  --c-line-1: #2c3160;
+  --c-line-1: #2a3060;
   --c-line-2: #3a4170;
-  --c-line-3: #5a6196;
+  --c-line-3: #4d5690;
 
   /* Textes */
   --c-text: #e8e6ff;
   --c-text-dim: #a7a3d1;
-  --c-text-mute: #9692c0;
+  --c-text-mute: #a7a3d1;
 
   /* Néons : clair / vif / sombre */
   --c-cyan-l: #b8faff;
   --c-cyan: #3ef0ff;
-  --c-cyan-d: #1f8e99;
+  --c-cyan-d: #1fb8d6;
   --c-green: #4dffa6;
-  --c-green-d: #2e8f6a;
-  --c-magenta-l: #ffb8f0;
+  --c-green-d: #2fd68a;
+  --c-magenta-l: #ffbaf0;
   --c-magenta: #ff4fd8;
-  --c-magenta-d: #8a2a74;
-  --c-amber-l: #ffd27a;
+  --c-magenta-d: #c93aae;
+  --c-amber-l: #ffd98a;
   --c-amber: #ffb547;
-  --c-amber-d: #8a5a1a;
-  --c-violet: #9b6bff;
-  --c-violet-d: #52388f;
-  --c-danger: #ff5c7a;
+  --c-amber-d: #7a4812;
+  --c-violet: #b08cff;
+  --c-violet-d: #4a2f94;
+  --c-danger: #ff4fd8;
 
   /* Grille pixel : 1 pixel d'écran = --ps pixels CSS, toujours entier */
   --ps: 2;
